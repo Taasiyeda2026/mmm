@@ -1,0 +1,1492 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ניהול | מנהל מאמץ מנהל</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@300;400;500;700&family=Heebo:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f7f5f1;
+  --surface: #ffffff;
+  --surface2: #f0ede8;
+  --surface3: #e8e4de;
+  --border: #e0dbd2;
+  --border2: #d0cac0;
+  --gold: #b8913a;
+  --gold-light: #c9a84c;
+  --gold-dim: rgba(184,145,58,0.10);
+  --text: #1a1814;
+  --text-dim: #5a5550;
+  --text-muted: #9a9690;
+  --accent: #3a6a8a;
+  --success: #2d7a5e;
+  --warning: #8a6020;
+  --danger: #8a3d3d;
+  --font-display: 'Frank Ruhl Libre', serif;
+  --font-body: 'Heebo', sans-serif;
+  --radius: 8px;
+  --sidebar: 240px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.6;
+  direction: rtl;
+  min-height: 100vh;
+}
+
+/* ── SCREENS ── */
+.screen { display: none; }
+.screen.active { display: flex; }
+
+/* ── LOGIN ── */
+#loginScreen {
+  min-height: 100vh;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  background: radial-gradient(ellipse 70% 50% at 50% 0%, rgba(201,168,76,0.05) 0%, transparent 70%);
+}
+
+.admin-login-box {
+  width: 360px;
+  text-align: center;
+}
+
+.admin-logo {
+  font-family: var(--font-display);
+  font-size: 13px;
+  color: var(--gold);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.admin-logo::before, .admin-logo::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border2);
+}
+
+.admin-title {
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 400;
+  color: var(--text);
+  margin-bottom: 4px;
+  letter-spacing: -0.02em;
+}
+
+.admin-sub {
+  color: var(--text-muted);
+  font-size: 13px;
+  margin-bottom: 36px;
+}
+
+.login-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 1px 8px rgba(0,0,0,0.05);
+  padding: 32px;
+}
+
+label.fl {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-dim);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.text-input {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s;
+  direction: ltr;
+  letter-spacing: 0.05em;
+}
+.text-input:focus { border-color: var(--gold); }
+
+.btn-gold {
+  width: 100%;
+  margin-top: 12px;
+  background: var(--gold);
+  color: #ffffff;
+  border: none;
+  border-radius: var(--radius);
+  padding: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: var(--font-body);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.btn-gold:hover { background: var(--gold-light); }
+
+.err { display: none; margin-top: 12px; color: #e07070; font-size: 13px; }
+
+/* ── LAYOUT ── */
+#adminScreen {
+  min-height: 100vh;
+  flex-direction: row;
+}
+
+/* SIDEBAR */
+.sidebar {
+  width: var(--sidebar);
+  background: var(--surface);
+  border-left: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  overflow-y: auto;
+  z-index: 50;
+}
+
+.sidebar-brand {
+  padding: 24px 20px 20px;
+  border-bottom: 1px solid var(--border);
+}
+.sidebar-brand-name {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--gold);
+  line-height: 1.3;
+}
+.sidebar-brand-sub {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.sidebar-section {
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.sidebar-section-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-muted);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 8px 20px 4px;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 7px 20px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  color: var(--text-dim);
+  font-size: 13px;
+  border-radius: 0;
+}
+.nav-item:hover { background: var(--surface2); color: var(--text); }
+.nav-item.active { background: var(--gold-dim); color: var(--gold); }
+.nav-item svg { width: 15px; height: 15px; flex-shrink: 0; }
+
+.sidebar-footer {
+  margin-top: auto;
+  padding: 16px 20px;
+  border-top: 1px solid var(--border);
+}
+.btn-logout-admin {
+  width: 100%;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px;
+  color: var(--text-muted);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-logout-admin:hover { border-color: var(--text-muted); color: var(--text-dim); }
+
+/* MAIN CONTENT */
+.main-area {
+  flex: 1;
+  margin-right: var(--sidebar);
+  overflow-y: auto;
+}
+
+.main-header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 20px 36px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 30;
+}
+
+.main-header-title {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 400;
+  color: var(--text);
+  letter-spacing: -0.02em;
+}
+
+.header-actions { display: flex; gap: 10px; }
+
+.btn-sm {
+  background: none;
+  border: 1px solid var(--border2);
+  border-radius: 6px;
+  padding: 5px 11px;
+  color: var(--text-dim);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.btn-sm:hover { border-color: var(--gold); color: var(--gold); }
+
+.btn-sm-gold {
+  background: var(--gold);
+  border: none;
+  border-radius: 6px;
+  padding: 5px 13px;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.btn-sm-gold:hover { background: var(--gold-light); }
+
+.page-content {
+  padding: 32px 36px;
+}
+
+/* STATS ROW */
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.stat-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px 22px;
+}
+
+.stat-value {
+  font-family: var(--font-display);
+  font-size: 32px;
+  font-weight: 500;
+  color: var(--text);
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.stat-label {
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.stat-sub {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+/* FILTERS */
+.filters-bar {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 18px 22px;
+  margin-bottom: 20px;
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  align-items: flex-end;
+}
+
+.filter-group { display: flex; flex-direction: column; gap: 5px; }
+
+.filter-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.filter-input, .filter-select {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 12px;
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.2s;
+  min-width: 140px;
+}
+.filter-input:focus, .filter-select:focus { border-color: var(--gold); }
+.filter-select option { background: var(--surface); }
+
+.filter-input.search-wide { min-width: 220px; }
+
+/* TABLE */
+.table-wrap {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.table-header {
+  padding: 16px 22px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.table-title {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.table-count {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+thead th {
+  text-align: right;
+  padding: 12px 18px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+tbody tr {
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+  cursor: pointer;
+}
+tbody tr:last-child { border-bottom: none; }
+tbody tr:hover { background: var(--surface2); }
+
+tbody td {
+  padding: 14px 18px;
+  font-size: 13px;
+  color: var(--text-dim);
+  vertical-align: middle;
+}
+
+.td-name {
+  font-weight: 500;
+  color: var(--text);
+  font-size: 14px;
+}
+
+.td-org { color: var(--text-muted); font-size: 12px; }
+
+/* Session dots */
+.session-dots {
+  display: flex;
+  gap: 4px;
+  justify-content: flex-start;
+}
+
+.session-dot {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1px solid var(--border2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  color: var(--text-muted);
+  font-family: var(--font-display);
+  transition: all 0.2s;
+}
+
+.session-dot.done { background: var(--gold-dim); border-color: var(--gold); color: var(--gold); }
+.session-dot.draft { background: rgba(74,127,165,0.1); border-color: rgba(74,127,165,0.4); color: var(--accent); }
+
+/* Badges */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 500;
+}
+.badge-done { background: var(--gold-dim); color: var(--gold); border: 1px solid rgba(201,168,76,0.3); }
+.badge-draft { background: rgba(74,127,165,0.1); color: var(--accent); border: 1px solid rgba(74,127,165,0.3); }
+.badge-none { background: var(--surface3); color: var(--text-muted); border: 1px solid var(--border2); }
+
+/* MODAL */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  z-index: 200;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.modal-overlay.open { display: flex; }
+
+.modal {
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: 12px;
+  width: 100%;
+  max-width: 700px;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: modalIn 0.25s ease;
+}
+@keyframes modalIn {
+  from { opacity: 0; transform: translateY(16px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+
+.modal-header {
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+
+.modal-title {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 400;
+  color: var(--text);
+}
+
+.modal-close {
+  width: 28px;
+  height: 28px;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  transition: all 0.2s;
+}
+.modal-close:hover { border-color: var(--text-muted); color: var(--text); }
+
+.modal-body {
+  padding: 24px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+/* Response detail */
+.response-section {
+  margin-bottom: 24px;
+}
+
+.response-section-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--gold);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.response-field {
+  margin-bottom: 14px;
+}
+
+.response-field-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.response-field-value {
+  font-size: 14px;
+  color: var(--text);
+  font-weight: 300;
+  line-height: 1.6;
+}
+
+.response-field-value.empty {
+  color: var(--text-muted);
+  font-style: italic;
+  font-size: 13px;
+}
+
+.summary-sentence {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 400;
+  color: var(--gold);
+  line-height: 1.5;
+  padding: 16px;
+  background: var(--gold-dim);
+  border: 1px solid rgba(201,168,76,0.2);
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.action-commitment {
+  padding: 14px;
+  background: rgba(61,138,110,0.1);
+  border: 1px solid rgba(61,138,110,0.25);
+  border-radius: 8px;
+}
+
+/* Add participant form */
+.add-form { display: flex; flex-direction: column; gap: 16px; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.form-field { display: flex; flex-direction: column; gap: 6px; }
+.form-field label { font-size: 12px; font-weight: 500; color: var(--text-dim); }
+.form-text-input {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  color: var(--text);
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.2s;
+  direction: rtl;
+}
+.form-text-input:focus { border-color: var(--gold); }
+
+/* Toast */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(16px);
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 22px;
+  font-size: 13px;
+  color: var(--text);
+  z-index: 999;
+  opacity: 0;
+  transition: all 0.3s;
+  white-space: nowrap;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.toast.success { border-color: var(--success); color: #5dba96; }
+
+/* Loader */
+.loader {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(201,168,76,0.2);
+  border-top-color: var(--gold);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Responses view */
+.session-tabs {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.session-tab {
+  padding: 5px 13px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  font-size: 12px;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.session-tab:hover { border-color: var(--gold); color: var(--gold); }
+.session-tab.active { background: var(--gold-dim); border-color: var(--gold); color: var(--gold); }
+
+/* Code display */
+.access-code-display {
+  font-family: monospace;
+  font-size: 16px;
+  font-weight: bold;
+  letter-spacing: 0.15em;
+  color: var(--gold);
+  background: var(--gold-dim);
+  padding: 12px 20px;
+  border-radius: 8px;
+  border: 1px solid rgba(201,168,76,0.3);
+  text-align: center;
+  margin: 16px 0;
+  direction: ltr;
+}
+
+.new-code-result {
+  display: none;
+  padding: 16px;
+  background: rgba(61,138,110,0.1);
+  border: 1px solid rgba(61,138,110,0.3);
+  border-radius: 8px;
+  margin-top: 16px;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .sidebar { display: none; }
+  .main-area { margin-right: 0; }
+  .stats-row { grid-template-columns: repeat(2, 1fr); }
+  .page-content { padding: 20px; }
+  .main-header { padding: 16px 20px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══ ADMIN LOGIN ═══ -->
+<div id="loginScreen" class="screen active">
+  <div class="admin-login-box">
+    <div class="admin-logo">ניהול</div>
+    <div class="admin-title">מנהל מאמץ מנהל</div>
+    <div class="admin-sub">כניסת מנהל מערכת</div>
+
+    <div class="login-card">
+      <label class="fl">סיסמת ניהול</label>
+      <input type="password" class="text-input" id="adminPassInput" placeholder="••••••••••" autocomplete="current-password">
+      <button class="btn-gold" onclick="doAdminLogin()">כניסה לדשבורד</button>
+      <div class="err" id="adminErr">סיסמה שגויה</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ ADMIN DASHBOARD ═══ -->
+<div id="adminScreen" class="screen">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="sidebar-brand-name">מנהל מאמץ מנהל</div>
+      <div class="sidebar-brand-sub">ממשק ניהול</div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">ניתוח נתונים</div>
+      <div class="nav-item active" onclick="showPage('overview')" id="nav-overview">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+          <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+        </svg>
+        סקירה כללית
+      </div>
+      <div class="nav-item" onclick="showPage('participants')" id="nav-participants">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+          <circle cx="9" cy="7" r="4"/>
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
+        </svg>
+        משתתפים
+      </div>
+      <div class="nav-item" onclick="showPage('responses')" id="nav-responses">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/>
+          <line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
+        </svg>
+        תשובות מפגשים
+      </div>
+      <div class="nav-item" onclick="showPage('actions')" id="nav-actions">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <polyline points="9 11 12 14 22 4"/>
+          <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+        </svg>
+        צעדי פעולה
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">ניהול</div>
+      <div class="nav-item" onclick="showPage('addParticipant')" id="nav-addParticipant">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+          <circle cx="8.5" cy="7" r="4"/>
+          <line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/>
+        </svg>
+        הוספת משתתף
+      </div>
+      <div class="nav-item" onclick="doExport()" id="nav-export">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        ייצוא נתונים
+      </div>
+    </div>
+
+    <div class="sidebar-footer">
+      <button class="btn-logout-admin" onclick="doAdminLogout()">יציאה מהמערכת</button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main-area">
+    <!-- ═ OVERVIEW ═ -->
+    <div id="page-overview" class="page-section active">
+      <div class="main-header">
+        <div class="main-header-title">סקירה כללית</div>
+        <div class="header-actions">
+          <button class="btn-sm" onclick="loadAllData()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+            </svg>
+            רענון
+          </button>
+        </div>
+      </div>
+      <div class="page-content">
+        <div class="stats-row" id="statsRow">
+          <div class="stat-card"><div class="stat-value" id="stat-total">—</div><div class="stat-label">משתתפים</div></div>
+          <div class="stat-card"><div class="stat-value" id="stat-completed">—</div><div class="stat-label">מפגשים הושלמו</div></div>
+          <div class="stat-card"><div class="stat-value" id="stat-drafts">—</div><div class="stat-label">טיוטות</div></div>
+          <div class="stat-card"><div class="stat-value" id="stat-empty">—</div><div class="stat-label">ממתינים</div></div>
+        </div>
+
+        <div class="table-wrap">
+          <div class="table-header">
+            <span class="table-title">סטטוס משתתפים</span>
+            <span class="table-count" id="overviewCount"></span>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>שם</th>
+                <th>תפקיד ׀ ארגון</th>
+                <th>שותף/ה</th>
+                <th>מפגשים</th>
+                <th>סטטוס</th>
+              </tr>
+            </thead>
+            <tbody id="overviewTable"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═ PARTICIPANTS ═ -->
+    <div id="page-participants" class="page-section" style="display:none">
+      <div class="main-header">
+        <div class="main-header-title">משתתפים</div>
+        <div class="header-actions">
+          <button class="btn-sm-gold" onclick="showPage('addParticipant')">+ הוספת משתתף</button>
+        </div>
+      </div>
+      <div class="page-content">
+        <div class="filters-bar">
+          <div class="filter-group">
+            <span class="filter-label">חיפוש</span>
+            <input type="text" class="filter-input search-wide" id="partSearch" placeholder="שם, ארגון..." oninput="filterParticipants()">
+          </div>
+          <div class="filter-group">
+            <span class="filter-label">סטטוס</span>
+            <select class="filter-select" id="partStatus" onchange="filterParticipants()">
+              <option value="">הכל</option>
+              <option value="completed">הושלם</option>
+              <option value="partial">חלקי</option>
+              <option value="none">לא מולא</option>
+            </select>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <div class="table-header">
+            <span class="table-title">רשימת משתתפים</span>
+            <span class="table-count" id="partCount"></span>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>שם</th><th>תפקיד</th><th>ארגון</th><th>שותף/ה</th>
+                <th>קוד גישה</th><th>מפגשים</th><th>פעולה</th>
+              </tr>
+            </thead>
+            <tbody id="participantsTable"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═ RESPONSES ═ -->
+    <div id="page-responses" class="page-section" style="display:none">
+      <div class="main-header">
+        <div class="main-header-title">תשובות מפגשים</div>
+      </div>
+      <div class="page-content">
+        <div class="filters-bar">
+          <div class="filter-group">
+            <span class="filter-label">חיפוש טקסט</span>
+            <input type="text" class="filter-input search-wide" id="respSearch" placeholder='חיפוש בכל התשובות...' oninput="filterResponses()">
+          </div>
+          <div class="filter-group">
+            <span class="filter-label">מפגש</span>
+            <select class="filter-select" id="respSession" onchange="filterResponses()">
+              <option value="">כל המפגשים</option>
+              <option value="1">מפגש 1</option><option value="2">מפגש 2</option>
+              <option value="3">מפגש 3</option><option value="4">מפגש 4</option>
+              <option value="5">מפגש 5</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <span class="filter-label">רשות שיתוף</span>
+            <select class="filter-select" id="respSharing" onchange="filterResponses()">
+              <option value="">הכל</option>
+              <option value="anonymous">אנונימי</option>
+              <option value="named">בשם</option>
+            </select>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <div class="table-header">
+            <span class="table-title">תשובות</span>
+            <span class="table-count" id="respCount"></span>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>שם</th><th>מפגש</th><th>תובנה מרכזית</th><th>שיתוף</th><th>סטטוס</th><th></th>
+              </tr>
+            </thead>
+            <tbody id="responsesTable"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═ ACTIONS ═ -->
+    <div id="page-actions" class="page-section" style="display:none">
+      <div class="main-header">
+        <div class="main-header-title">צעדי פעולה</div>
+      </div>
+      <div class="page-content">
+        <div class="table-wrap" id="actionsTableWrap">
+          <div class="table-header">
+            <span class="table-title">התחייבויות לפעולה</span>
+          </div>
+          <table>
+            <thead>
+              <tr><th>שם</th><th>מפגש</th><th>צעד שהתחייב</th><th>מה ייחשב התקדמות</th><th>משאבים נדרשים</th></tr>
+            </thead>
+            <tbody id="actionsTable"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═ ADD PARTICIPANT ═ -->
+    <div id="page-addParticipant" class="page-section" style="display:none">
+      <div class="main-header">
+        <div class="main-header-title">הוספת משתתף חדש</div>
+      </div>
+      <div class="page-content" style="max-width:600px">
+        <div class="table-wrap" style="padding: 28px">
+          <div class="add-form" id="addForm">
+            <div class="form-row">
+              <div class="form-field">
+                <label>שם מלא *</label>
+                <input type="text" class="form-text-input" id="new_fullName" placeholder="ד&quot;ר ישראל ישראלי">
+              </div>
+              <div class="form-field">
+                <label>תפקיד</label>
+                <input type="text" class="form-text-input" id="new_role" placeholder="מנהל/ת...">
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-field">
+                <label>ארגון</label>
+                <input type="text" class="form-text-input" id="new_organization" placeholder="שם הארגון">
+              </div>
+              <div class="form-field">
+                <label>שם השותף/ה</label>
+                <input type="text" class="form-text-input" id="new_partnerName" placeholder="שם השותף/ה">
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-field">
+                <label>תפקיד השותף/ה</label>
+                <input type="text" class="form-text-input" id="new_partnerRole" placeholder="תפקיד השותף/ה">
+              </div>
+              <div></div>
+            </div>
+            <button class="btn-gold" style="max-width:180px;padding:9px" onclick="addParticipant()">צור משתתף + קוד</button>
+          </div>
+          <div class="new-code-result" id="newCodeResult">
+            <div style="font-size:13px;color:var(--text-dim);margin-bottom:8px">המשתתף נוצר בהצלחה. קוד גישה:</div>
+            <div class="access-code-display" id="newCodeDisplay"></div>
+            <div style="font-size:12px;color:var(--text-muted)">קישור ישיר: <span id="newCodeLink" style="color:var(--accent)"></span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ RESPONSE MODAL ═══ -->
+<div class="modal-overlay" id="responseModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modalTitle">פרטי תשובה</div>
+      <button class="modal-close" onclick="closeModal('responseModal')">×</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════ CONFIG ═══════════
+const API_URL = 'https://script.google.com/macros/s/AKfycbxPIaTLeODpZhk_lNjGzUIrDTfIxzD_6K2phUok4nqD4B0md7NWA-plhbrrKVv8YsYW/ex
+const DEMO_MODE = !API_URL.startsWith('https://script');
+
+const SESSIONS_META = {
+  1: 'תרבות ארגונית וניהול מבוסס ערכים',
+  2: 'חדשנות טכנולוגית ככלי ניהולי',
+  3: 'ניהול פרויקטים בשיטה שיתופית',
+  4: 'ניהול משברים וקבלת החלטות תחת לחץ',
+  5: 'יצירת שותפויות, מיתוג וחשיבה עסקית בחינוך'
+};
+
+// ═══════════ STATE ═══════════
+let state = {
+  token: null,
+  participants: [],
+  responses: [],
+  filteredParticipants: [],
+  filteredResponses: []
+};
+
+// ═══════════ API ═══════════
+async function apiCall(action, body = {}) {
+  if (DEMO_MODE) return demoApi(action, body);
+  const res = await fetch(API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action, token: state.token, ...body })
+  });
+  return res.json();
+}
+
+function demoApi(action, body) {
+  const db = JSON.parse(localStorage.getItem('mmm_db') || '{}');
+  const participants = db.participants || getDemoParticipants();
+  const responses = Object.values(db.responses || {});
+
+  switch (action) {
+    case 'adminLogin':
+      return body.password === 'admin2025'
+        ? { success: true, token: 'admin_demo' }
+        : { success: false, error: 'סיסמה שגויה' };
+
+    case 'adminGetAll': {
+      const completionMap = {};
+      responses.forEach(r => {
+        if (!completionMap[r.participantId]) completionMap[r.participantId] = {};
+        completionMap[r.participantId][r.sessionNumber] = r.isSubmitted ? 'done' : 'draft';
+      });
+      const enriched = participants.map(p => ({
+        ...p,
+        completion: completionMap[p.accessCode] || {}
+      }));
+      return { success: true, participants: enriched };
+    }
+
+    case 'adminGetResponses': {
+      let filtered = [...responses];
+      if (body.participantId) filtered = filtered.filter(r => r.participantId === body.participantId);
+      if (body.sessionNumber) filtered = filtered.filter(r => r.sessionNumber == body.sessionNumber);
+      if (body.searchQuery) {
+        const q = body.searchQuery.toLowerCase();
+        filtered = filtered.filter(r => JSON.stringify(r).toLowerCase().includes(q));
+      }
+      // Enrich with name
+      const pMap = {};
+      participants.forEach(p => pMap[p.accessCode] = p);
+      filtered = filtered.map(r => ({...r, fullName: pMap[r.participantId]?.fullName || r.participantId}));
+      return { success: true, responses: filtered };
+    }
+
+    case 'adminAddParticipant': {
+      const newP = {
+        participantId: 'P' + Date.now(),
+        accessCode: generateCode(),
+        fullName: body.fullName,
+        role: body.role || '',
+        organization: body.organization || '',
+        partnerName: body.partnerName || '',
+        partnerRole: body.partnerRole || ''
+      };
+      participants.push(newP);
+      db.participants = participants;
+      localStorage.setItem('mmm_db', JSON.stringify(db));
+      return { success: true, accessCode: newP.accessCode, participantId: newP.participantId };
+    }
+
+    case 'adminExport':
+      return { success: true, participants, responses };
+
+    default:
+      return { success: false, error: 'Unknown' };
+  }
+}
+
+function getDemoParticipants() {
+  return [
+    { participantId: 'P001', accessCode: '6UFMXN', fullName: 'גילת סיימון', role: 'מנהלת אגף החינוך העל-יסודי', organization: 'עיריית נתניה', partnerName: 'אורית טסלר לוי', partnerRole: 'סמנכ"לית' },
+    { participantId: 'P002', accessCode: 'PDB4TA', fullName: 'אושרית ונדן', role: 'צוות ניהול', organization: 'אולפנית בר אילן', partnerName: 'ד"ר אורנית כהן', partnerRole: 'ראש רשות המחקר והחדשנות' },
+    { participantId: 'P003', accessCode: '6PHKFP', fullName: 'יהודית', role: 'צוות ניהול', organization: 'אולפנית בר אילן', partnerName: 'ד"ר אורנית כהן', partnerRole: 'ראש רשות המחקר והחדשנות' },
+    { participantId: 'P004', accessCode: 'AGVX9P', fullName: 'בת-חן שטדלר', role: 'צוות ניהול', organization: 'אולפנית בר אילן', partnerName: 'ד"ר אורנית כהן', partnerRole: 'ראש רשות המחקר והחדשנות' },
+    { participantId: 'P005', accessCode: 'R9EXQJ', fullName: 'סמדר דביר', role: 'צוות ניהול', organization: 'טשרניחובסקי', partnerName: 'עידן ופנר', partnerRole: 'סמנכ"ל טכנולוגיות' },
+    { participantId: 'P006', accessCode: 'QKRQYH', fullName: 'אושר תבורי', role: 'צוות ניהול', organization: 'טשרניחובסקי', partnerName: 'עידן ופנר', partnerRole: 'סמנכ"ל טכנולוגיות' },
+    { participantId: 'P007', accessCode: 'XJBMJE', fullName: 'ענבל שרף', role: 'מנהלת בית הספר', organization: 'אלתרמן', partnerName: 'נתן ברק', partnerRole: 'מנכ"ל' },
+    { participantId: 'P008', accessCode: 'DVB68L', fullName: 'שוש קיפר', role: 'צוות ניהול', organization: 'חיים גורי', partnerName: 'לריסה אמיר', partnerRole: 'מנכ"לית' },
+    { participantId: 'P009', accessCode: 'Q4J78V', fullName: 'עינב כהן', role: 'צוות ניהול', organization: 'חיים גורי', partnerName: 'לריסה אמיר', partnerRole: 'מנכ"לית' },
+    { participantId: 'P010', accessCode: 'L35LYZ', fullName: 'גלית פישר', role: 'צוות ניהול', organization: 'חיים גורי', partnerName: 'לריסה אמיר', partnerRole: 'מנכ"לית' },
+    { participantId: 'P011', accessCode: 'B4P5P6', fullName: 'סיגלית כהן', role: 'צוות ניהול', organization: 'שי עגנון', partnerName: 'רון שניר', partnerRole: 'מנכ"ל' },
+    { participantId: 'P012', accessCode: 'NQ8477', fullName: 'נירית כהן', role: 'מנהלת בית הספר', organization: 'שחפים', partnerName: 'רגין שבח', partnerRole: 'מנכ"לית' },
+    { participantId: 'P013', accessCode: '8CDKBF', fullName: 'ברכה דעבול', role: 'מנהלת בית הספר', organization: 'מורשת זבולון', partnerName: 'אנסטסיה זהר מדר', partnerRole: 'מנהלת רווחה וחוויית עובדים' },
+  ];
+}
+
+function generateCode() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let code = '';
+  for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
+  return code;
+}
+
+// ═══════════ LOGIN ═══════════
+document.getElementById('adminPassInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') doAdminLogin();
+});
+
+async function doAdminLogin() {
+  const pw = document.getElementById('adminPassInput').value;
+  const result = await apiCall('adminLogin', { password: pw });
+  if (result.success) {
+    state.token = result.token;
+    document.getElementById('adminErr').style.display = 'none';
+    showScreen('adminScreen');
+    loadAllData();
+  } else {
+    document.getElementById('adminErr').style.display = 'block';
+  }
+}
+
+function doAdminLogout() {
+  state.token = null;
+  showScreen('loginScreen');
+}
+
+// ═══════════ DATA LOADING ═══════════
+async function loadAllData() {
+  const [partResult, respResult] = await Promise.all([
+    apiCall('adminGetAll'),
+    apiCall('adminGetResponses')
+  ]);
+
+  if (partResult.success) {
+    state.participants = partResult.participants;
+    state.filteredParticipants = [...state.participants];
+  }
+
+  if (respResult.success) {
+    state.responses = respResult.responses;
+    state.filteredResponses = [...state.responses];
+  }
+
+  renderStats();
+  renderOverview();
+  renderParticipants();
+  renderResponses();
+  renderActions();
+}
+
+// ═══════════ STATS ═══════════
+function renderStats() {
+  const total = state.participants.length;
+  let completed = 0, drafts = 0, empty = 0;
+
+  state.participants.forEach(p => {
+    const comp = p.completion || {};
+    const doneCount = Object.values(comp).filter(v => v === 'done' || v === true || v === 'TRUE').length;
+    const draftCount = Object.values(comp).filter(v => v === 'draft').length;
+    if (doneCount === 5) completed++;
+    else if (doneCount === 0 && draftCount === 0) empty++;
+    else drafts++;
+  });
+
+  document.getElementById('stat-total').textContent = total;
+  document.getElementById('stat-completed').textContent = completed;
+  document.getElementById('stat-drafts').textContent = drafts;
+  document.getElementById('stat-empty').textContent = empty;
+}
+
+// ═══════════ OVERVIEW TABLE ═══════════
+function renderOverview() {
+  const tbody = document.getElementById('overviewTable');
+  document.getElementById('overviewCount').textContent = state.participants.length + ' משתתפים';
+
+  tbody.innerHTML = state.participants.map(p => {
+    const comp = p.completion || {};
+    const dots = [1,2,3,4,5].map(n => {
+      const s = comp[n];
+      const cls = (s === 'done' || s === true || s === 'TRUE') ? 'done' : (s === 'draft' ? 'draft' : '');
+      return `<div class="session-dot ${cls}">${n}</div>`;
+    }).join('');
+
+    const doneCount = Object.values(comp).filter(v => v === 'done' || v === true || v === 'TRUE').length;
+    let badge = '';
+    if (doneCount === 5) badge = '<span class="badge badge-done">הושלם</span>';
+    else if (doneCount > 0) badge = `<span class="badge badge-draft">${doneCount}/5 מפגשים</span>`;
+    else badge = '<span class="badge badge-none">לא התחיל</span>';
+
+    return `
+      <tr onclick="viewParticipantResponses('${p.accessCode}')">
+        <td class="td-name">${p.fullName}</td>
+        <td><div>${p.role || '—'}</div><div class="td-org">${p.organization || ''}</div></td>
+        <td class="td-org">${p.partnerName || '—'}</td>
+        <td><div class="session-dots">${dots}</div></td>
+        <td>${badge}</td>
+      </tr>
+    `;
+  }).join('');
+}
+
+// ═══════════ PARTICIPANTS TABLE ═══════════
+function renderParticipants() {
+  const tbody = document.getElementById('participantsTable');
+  const list = state.filteredParticipants;
+  document.getElementById('partCount').textContent = list.length + ' משתתפים';
+
+  tbody.innerHTML = list.map(p => {
+    const comp = p.completion || {};
+    const doneCount = Object.values(comp).filter(v => v === 'done' || v === true || v === 'TRUE').length;
+    const dots = [1,2,3,4,5].map(n => {
+      const s = comp[n];
+      const cls = (s === 'done' || s === true || s === 'TRUE') ? 'done' : (s === 'draft' ? 'draft' : '');
+      return `<div class="session-dot ${cls}">${n}</div>`;
+    }).join('');
+
+    return `
+      <tr>
+        <td class="td-name">${p.fullName}</td>
+        <td>${p.role || '—'}</td>
+        <td>${p.organization || '—'}</td>
+        <td class="td-org">${p.partnerName || '—'}</td>
+        <td><span style="font-family:monospace;color:var(--gold);font-size:13px;letter-spacing:0.1em">${p.accessCode}</span></td>
+        <td><div class="session-dots">${dots}</div></td>
+        <td><button class="btn-sm" onclick="viewParticipantResponses('${p.accessCode}')">צפייה</button></td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function filterParticipants() {
+  const q = document.getElementById('partSearch').value.toLowerCase();
+  const status = document.getElementById('partStatus').value;
+
+  state.filteredParticipants = state.participants.filter(p => {
+    const matchQ = !q || (p.fullName + p.organization + p.role).toLowerCase().includes(q);
+    const comp = p.completion || {};
+    const doneCount = Object.values(comp).filter(v => v === 'done' || v === true || v === 'TRUE').length;
+    const draftCount = Object.values(comp).filter(v => v === 'draft').length;
+    let matchStatus = true;
+    if (status === 'completed') matchStatus = doneCount === 5;
+    else if (status === 'partial') matchStatus = doneCount > 0 && doneCount < 5;
+    else if (status === 'none') matchStatus = doneCount === 0 && draftCount === 0;
+    return matchQ && matchStatus;
+  });
+  renderParticipants();
+}
+
+// ═══════════ RESPONSES TABLE ═══════════
+function renderResponses() {
+  const tbody = document.getElementById('responsesTable');
+  const list = state.filteredResponses;
+  document.getElementById('respCount').textContent = list.length + ' תשובות';
+
+  const sharingLabels = { private: 'פרטי', anonymous: 'אנונימי', named: 'בשם' };
+
+  tbody.innerHTML = list.map((r, i) => {
+    const sessionTitle = SESSIONS_META[r.sessionNumber] || `מפגש ${r.sessionNumber}`;
+    const insight = r.mainInsight || r.summarySentence || '—';
+    const sharingLabel = sharingLabels[r.sharingPermission] || '—';
+    const sharingBadge = r.sharingPermission === 'named' ? 'badge-done' :
+                         r.sharingPermission === 'anonymous' ? 'badge-draft' : 'badge-none';
+    const status = (r.isSubmitted === 'TRUE' || r.isSubmitted === true) ?
+      '<span class="badge badge-done">הושלם</span>' :
+      '<span class="badge badge-draft">טיוטה</span>';
+
+    return `
+      <tr onclick="viewResponseDetail(${i})">
+        <td class="td-name">${r.fullName || r.participantId}</td>
+        <td><span style="font-size:12px;color:var(--text-muted)">${r.sessionNumber}</span> ${sessionTitle.split(' ').slice(0,3).join(' ')}...</td>
+        <td style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${insight}</td>
+        <td><span class="badge ${sharingBadge}">${sharingLabel}</span></td>
+        <td>${status}</td>
+        <td><button class="btn-sm" onclick="event.stopPropagation();viewResponseDetail(${i})">פתח</button></td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function filterResponses() {
+  const q = document.getElementById('respSearch').value.toLowerCase();
+  const session = document.getElementById('respSession').value;
+  const sharing = document.getElementById('respSharing').value;
+
+  state.filteredResponses = state.responses.filter(r => {
+    const matchQ = !q || JSON.stringify(r).toLowerCase().includes(q);
+    const matchSession = !session || r.sessionNumber == session;
+    const matchSharing = !sharing || r.sharingPermission === sharing;
+    return matchQ && matchSession && matchSharing;
+  });
+  renderResponses();
+}
+
+// ═══════════ ACTIONS TABLE ═══════════
+function renderActions() {
+  const tbody = document.getElementById('actionsTable');
+  const actions = state.responses.filter(r => r.actionCommitment);
+
+  tbody.innerHTML = actions.map(r => `
+    <tr>
+      <td class="td-name">${r.fullName || r.participantId}</td>
+      <td style="font-size:12px;color:var(--text-muted)">מפגש ${r.sessionNumber}</td>
+      <td style="color:var(--text)">${r.actionCommitment}</td>
+      <td style="color:var(--text-dim)">${r.progressDefinition || '—'}</td>
+      <td style="color:var(--text-muted)">${r.supportNeeded || '—'}</td>
+    </tr>
+  `).join('');
+}
+
+// ═══════════ MODALS ═══════════
+function viewResponseDetail(idx) {
+  const r = state.filteredResponses[idx];
+  if (!r) return;
+
+  const sessionTitle = SESSIONS_META[r.sessionNumber] || `מפגש ${r.sessionNumber}`;
+  document.getElementById('modalTitle').textContent = `${r.fullName || r.participantId} · מפגש ${r.sessionNumber}`;
+
+  const val = (v) => v ? `<div class="response-field-value">${v}</div>` : `<div class="response-field-value empty">—</div>`;
+
+  document.getElementById('modalBody').innerHTML = `
+    ${r.summarySentence ? `<div class="summary-sentence">"${r.summarySentence}"</div>` : ''}
+
+    <div class="response-section">
+      <div class="response-section-title">א — מיקוד אישי</div>
+      <div class="response-field"><div class="response-field-label">תובנה מרכזית</div>${val(r.mainInsight)}</div>
+      <div class="response-field"><div class="response-field-label">רעיון שפגש אותי</div>${val(r.centralIdea)}</div>
+      <div class="response-field"><div class="response-field-label">רלוונטיות</div>${val(r.relevanceScore ? r.relevanceScore + '/5' : null)}</div>
+    </div>
+
+    <div class="response-section">
+      <div class="response-section-title">ב — דיאלוג עם השותף/ה</div>
+      <div class="response-field"><div class="response-field-label">האם התקיים שיח</div>${val(r.dialogueStatus)}</div>
+      <div class="response-field"><div class="response-field-label">נושא השיחה</div>${val(r.dialogueTopic)}</div>
+      <div class="response-field"><div class="response-field-label">מה התחדד</div>${val(r.dialogueReflection)}</div>
+    </div>
+
+    <div class="response-section">
+      <div class="response-section-title">ג — השלכה ארגונית</div>
+      <div class="response-field"><div class="response-field-label">קשר לארגון</div>${val(r.organizationalConnection)}</div>
+      <div class="response-field"><div class="response-field-label">אתגר ניהולי</div>${val(r.managementChallenge)}</div>
+    </div>
+
+    <div class="response-section">
+      <div class="response-section-title">ד — פעולה</div>
+      <div class="action-commitment">
+        <div class="response-field-label" style="margin-bottom:6px">התחייבות לפעולה</div>
+        <div style="font-size:15px;color:var(--text)">${r.actionCommitment || '—'}</div>
+      </div>
+      <div style="height:10px"></div>
+      <div class="response-field"><div class="response-field-label">מדד התקדמות</div>${val(r.progressDefinition)}</div>
+      <div class="response-field"><div class="response-field-label">משאבים נדרשים</div>${val(r.supportNeeded)}</div>
+    </div>
+
+    <div class="response-section">
+      <div class="response-section-title">ה — שאלת המפגש</div>
+      <div class="response-field">${val(r.customSessionQuestionAnswer)}</div>
+    </div>
+
+    <div style="margin-top:16px;padding:12px 14px;background:var(--surface2);border-radius:8px;font-size:12px;color:var(--text-muted)">
+      רמת שיתוף: ${r.sharingPermission || '—'} · 
+      עודכן: ${r.updatedAt ? new Date(r.updatedAt).toLocaleDateString('he-IL') : '—'}
+    </div>
+  `;
+
+  openModal('responseModal');
+}
+
+function viewParticipantResponses(accessCode) {
+  showPage('responses');
+  // Pre-filter by participant
+  state.filteredResponses = state.responses.filter(r => r.participantId === accessCode);
+  renderResponses();
+}
+
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+document.getElementById('responseModal').addEventListener('click', function(e) {
+  if (e.target === this) closeModal('responseModal');
+});
+
+// ═══════════ ADD PARTICIPANT ═══════════
+async function addParticipant() {
+  const fullName = document.getElementById('new_fullName').value.trim();
+  if (!fullName) { showToast('יש להזין שם מלא', ''); return; }
+
+  const result = await apiCall('adminAddParticipant', {
+    fullName,
+    role: document.getElementById('new_role').value,
+    organization: document.getElementById('new_organization').value,
+    partnerName: document.getElementById('new_partnerName').value,
+    partnerRole: document.getElementById('new_partnerRole').value
+  });
+
+  if (result.success) {
+    const code = result.accessCode;
+    const link = `${window.location.origin}/participant.html?code=${code}`;
+    document.getElementById('newCodeDisplay').textContent = code;
+    document.getElementById('newCodeLink').textContent = link;
+    document.getElementById('newCodeResult').style.display = 'block';
+    showToast('משתתף נוצר בהצלחה', 'success');
+    loadAllData();
+  }
+}
+
+// ═══════════ EXPORT ═══════════
+async function doExport() {
+  const result = await apiCall('adminExport');
+  if (!result.success) return;
+
+  const headers = ['שם', 'תפקיד', 'ארגון', 'שותף', 'מפגש', 'תובנה', 'רעיון', 'רלוונטיות',
+    'דיאלוג', 'נושא דיאלוג', 'רפלקציה', 'קשר ארגוני', 'אתגר', 'פעולה', 'התקדמות',
+    'משאבים', 'תמצית', 'שיתוף', 'שאלת מפגש', 'הושלם', 'עדכון'];
+
+  const rows = (result.responses || []).map(r => [
+    r.fullName, r.role, r.organization, r.partnerName, r.sessionNumber,
+    r.mainInsight, r.centralIdea, r.relevanceScore,
+    r.dialogueStatus, r.dialogueTopic, r.dialogueReflection,
+    r.organizationalConnection, r.managementChallenge,
+    r.actionCommitment, r.progressDefinition, r.supportNeeded,
+    r.summarySentence, r.sharingPermission, r.customSessionQuestionAnswer,
+    r.isSubmitted, r.updatedAt
+  ]);
+
+  const csv = [headers, ...rows].map(r =>
+    r.map(v => '"' + (v || '').toString().replace(/"/g, '""') + '"').join(',')
+  ).join('\n');
+
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'mmm_export_' + new Date().toISOString().split('T')[0] + '.csv';
+  a.click();
+  showToast('הקובץ יורד...', 'success');
+}
+
+// ═══════════ NAVIGATION ═══════════
+function showPage(page) {
+  document.querySelectorAll('.page-section').forEach(p => p.style.display = 'none');
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById(`page-${page}`).style.display = 'block';
+  const navEl = document.getElementById(`nav-${page}`);
+  if (navEl) navEl.classList.add('active');
+}
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  const el = document.getElementById(id);
+  el.classList.add('active');
+}
+
+function showToast(msg, type) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show ' + type;
+  setTimeout(() => t.className = 'toast', 3000);
+}
+
+// Check local storage for existing admin session
+if (DEMO_MODE) {
+  document.getElementById('adminPassInput').placeholder = 'admin2025';
+}
+</script>
+</body>
+</html>
