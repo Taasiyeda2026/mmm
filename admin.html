@@ -1113,6 +1113,7 @@ async function apiCall(action, body = {}) {
   if (DEMO_MODE) return demoApi(action, body);
   const res = await fetch(API_URL, {
     method: 'POST',
+    headers: { 'Content-Type': 'text/plain' },
     body: JSON.stringify({ action, token: state.token, ...body }),
     redirect: 'follow'
   });
@@ -1252,26 +1253,34 @@ function doAdminLogout() {
 
 // ═══════════ DATA LOADING ═══════════
 async function loadAllData() {
-  const [partResult, respResult] = await Promise.all([
-    apiCall('adminGetAll'),
-    apiCall('adminGetResponses')
-  ]);
+  try {
+    const [partResult, respResult] = await Promise.all([
+      apiCall('adminGetAll'),
+      apiCall('adminGetResponses')
+    ]);
 
-  if (partResult.success) {
-    state.participants = partResult.participants;
-    state.filteredParticipants = [...state.participants];
+    if (partResult.success) {
+      state.participants = partResult.participants;
+      state.filteredParticipants = [...state.participants];
+    } else {
+      showToast('שגיאה בטעינת משתתפים: ' + (partResult.error || 'שגיאה לא ידועה'), '');
+    }
+
+    if (respResult.success) {
+      state.responses = respResult.responses;
+      state.filteredResponses = [...state.responses];
+    } else {
+      showToast('שגיאה בטעינת תשובות: ' + (respResult.error || 'שגיאה לא ידועה'), '');
+    }
+
+    renderStats();
+    renderOverview();
+    renderParticipants();
+    renderResponses();
+    renderActions();
+  } catch(e) {
+    showToast('שגיאת חיבור לשרת — ' + e.message, '');
   }
-
-  if (respResult.success) {
-    state.responses = respResult.responses;
-    state.filteredResponses = [...state.responses];
-  }
-
-  renderStats();
-  renderOverview();
-  renderParticipants();
-  renderResponses();
-  renderActions();
 }
 
 // ═══════════ STATS ═══════════
