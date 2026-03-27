@@ -1110,7 +1110,7 @@ input.field-input::placeholder {
 <script>
 // ═══════════════════════════ CONFIG ═══════════════════════════
 // Replace with your deployed Google Apps Script URL
-const API_URL = 'https://script.google.com/macros/s/AKfycby1lW6GFyHvfKigWDmPgtMUI1V9vDy57-VDI-rEBNhQGVO7RXD5ok2f7gGojjarbmyTLA/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbw5PiUoV-JYrtRDki0XdDU77ISnRAHlru1QFeiIaQWJjCX8XGcn6AS8HE4qplVanRRWDQ/exec';
 
 // For demo/local use without backend:
 const DEMO_MODE = !API_URL.startsWith('https://script');
@@ -1163,10 +1163,11 @@ async function apiCall(action, body = {}) {
 
   const res = await fetch(API_URL, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ action, ...body })
   });
-  return res.json();
+  const text = await res.text();
+  try { return JSON.parse(text); }
+  catch(e) { throw new Error('תשובה לא תקינה'); }
 }
 
 // Demo mode: uses localStorage as backend
