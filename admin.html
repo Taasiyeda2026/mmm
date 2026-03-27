@@ -1088,7 +1088,7 @@ tbody td {
 
 <script>
 // ═══════════ CONFIG ═══════════
-const API_URL = 'https://script.google.com/macros/s/AKfycbxPIaTLeODpZhk_lNjGzUIrDTfIxzD_6K2phUok4nqD4B0md7NWA-plhbrrKVv8YsYW/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycby1lW6GFyHvfKigWDmPgtMUI1V9vDy57-VDI-rEBNhQGVO7RXD5ok2f7gGojjarbmyTLA/exec';
 const DEMO_MODE = !API_URL.startsWith('https://script');
 
 const SESSIONS_META = {
@@ -1113,10 +1113,14 @@ async function apiCall(action, body = {}) {
   if (DEMO_MODE) return demoApi(action, body);
   const res = await fetch(API_URL, {
     method: 'POST',
-    
-    body: JSON.stringify({ action, token: state.token, ...body })
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action, token: state.token, ...body }),
+    redirect: 'follow'
   });
-  return res.json();
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const text = await res.text();
+  try { return JSON.parse(text); }
+  catch(e) { throw new Error('תשובה לא תקינה מהשרת'); }
 }
 
 function demoApi(action, body) {
@@ -1214,14 +1218,31 @@ document.getElementById('adminPassInput').addEventListener('keydown', e => {
 
 async function doAdminLogin() {
   const pw = document.getElementById('adminPassInput').value;
-  const result = await apiCall('adminLogin', { password: pw });
-  if (result.success) {
-    state.token = result.token;
-    document.getElementById('adminErr').style.display = 'none';
-    showScreen('adminScreen');
-    loadAllData();
-  } else {
-    document.getElementById('adminErr').style.display = 'block';
+  if (!pw) return;
+
+  const btn = document.querySelector('.btn-gold');
+  btn.disabled = true;
+  btn.textContent = 'מתחבר...';
+
+  try {
+    const result = await apiCall('adminLogin', { password: pw });
+    if (result.success) {
+      state.token = result.token;
+      document.getElementById('adminErr').style.display = 'none';
+      showScreen('adminScreen');
+      loadAllData();
+    } else {
+      const errEl = document.getElementById('adminErr');
+      errEl.textContent = result.error || 'סיסמה שגויה';
+      errEl.style.display = 'block';
+    }
+  } catch(e) {
+    const errEl = document.getElementById('adminErr');
+    errEl.textContent = 'שגיאת חיבור — בדוק חיבור אינטרנט';
+    errEl.style.display = 'block';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'כניסה לדשבורד';
   }
 }
 
