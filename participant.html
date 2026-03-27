@@ -1113,7 +1113,7 @@ input.field-input::placeholder {
 const API_URL = 'https://script.google.com/macros/s/AKfycbw5PiUoV-JYrtRDki0XdDU77ISnRAHlru1QFeiIaQWJjCX8XGcn6AS8HE4qplVanRRWDQ/exec';
 
 // For demo/local use without backend:
-const DEMO_MODE = !API_URL.startsWith('https://script');
+const DEMO_MODE = false;
 
 // ═══════════════════════════ STATE ═══════════════════════════
 let state = {
@@ -1159,8 +1159,6 @@ const SESSIONS = [
 
 // ═══════════════════════════ API ═══════════════════════════
 async function apiCall(action, body = {}) {
-  if (DEMO_MODE) return demoApiCall(action, body);
-
   const res = await fetch(API_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'text/plain' },

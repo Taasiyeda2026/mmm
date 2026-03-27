@@ -1089,7 +1089,7 @@ tbody td {
 <script>
 // ═══════════ CONFIG ═══════════
 const API_URL = 'https://script.google.com/macros/s/AKfycbw5PiUoV-JYrtRDki0XdDU77ISnRAHlru1QFeiIaQWJjCX8XGcn6AS8HE4qplVanRRWDQ/exec';
-const DEMO_MODE = !API_URL.startsWith('https://script');
+const DEMO_MODE = false;
 
 const SESSIONS_META = {
   1: 'תרבות ארגונית וניהול מבוסס ערכים',
@@ -1110,7 +1110,6 @@ let state = {
 
 // ═══════════ API ═══════════
 async function apiCall(action, body = {}) {
-  if (DEMO_MODE) return demoApi(action, body);
   const res = await fetch(API_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'text/plain' },
@@ -1188,19 +1187,19 @@ function demoApi(action, body) {
 
 function getDemoParticipants() {
   return [
-    { participantId: 'P001', accessCode: '6UFMXN', fullName: 'גילת סיימון', role: 'מנהלת אגף החינוך העל-יסודי', organization: 'עיריית נתניה', partnerName: 'אורית טסלר לוי', partnerRole: 'סמנכ"לית' },
-    { participantId: 'P002', accessCode: 'PDB4TA', fullName: 'אושרית ונדן', role: 'צוות ניהול', organization: 'אולפנית בר אילן', partnerName: 'ד"ר אורנית כהן', partnerRole: 'ראש רשות המחקר והחדשנות' },
-    { participantId: 'P003', accessCode: '6PHKFP', fullName: 'יהודית', role: 'צוות ניהול', organization: 'אולפנית בר אילן', partnerName: 'ד"ר אורנית כהן', partnerRole: 'ראש רשות המחקר והחדשנות' },
-    { participantId: 'P004', accessCode: 'AGVX9P', fullName: 'בת-חן שטדלר', role: 'צוות ניהול', organization: 'אולפנית בר אילן', partnerName: 'ד"ר אורנית כהן', partnerRole: 'ראש רשות המחקר והחדשנות' },
-    { participantId: 'P005', accessCode: 'R9EXQJ', fullName: 'סמדר דביר', role: 'צוות ניהול', organization: 'טשרניחובסקי', partnerName: 'עידן ופנר', partnerRole: 'סמנכ"ל טכנולוגיות' },
-    { participantId: 'P006', accessCode: 'QKRQYH', fullName: 'אושר תבורי', role: 'צוות ניהול', organization: 'טשרניחובסקי', partnerName: 'עידן ופנר', partnerRole: 'סמנכ"ל טכנולוגיות' },
-    { participantId: 'P007', accessCode: 'XJBMJE', fullName: 'ענבל שרף', role: 'מנהלת בית הספר', organization: 'אלתרמן', partnerName: 'נתן ברק', partnerRole: 'מנכ"ל' },
-    { participantId: 'P008', accessCode: 'DVB68L', fullName: 'שוש קיפר', role: 'צוות ניהול', organization: 'חיים גורי', partnerName: 'לריסה אמיר', partnerRole: 'מנכ"לית' },
-    { participantId: 'P009', accessCode: 'Q4J78V', fullName: 'עינב כהן', role: 'צוות ניהול', organization: 'חיים גורי', partnerName: 'לריסה אמיר', partnerRole: 'מנכ"לית' },
-    { participantId: 'P010', accessCode: 'L35LYZ', fullName: 'גלית פישר', role: 'צוות ניהול', organization: 'חיים גורי', partnerName: 'לריסה אמיר', partnerRole: 'מנכ"לית' },
-    { participantId: 'P011', accessCode: 'B4P5P6', fullName: 'סיגלית כהן', role: 'צוות ניהול', organization: 'שי עגנון', partnerName: 'רון שניר', partnerRole: 'מנכ"ל' },
-    { participantId: 'P012', accessCode: 'NQ8477', fullName: 'נירית כהן', role: 'מנהלת בית הספר', organization: 'שחפים', partnerName: 'רגין שבח', partnerRole: 'מנכ"לית' },
-    { participantId: 'P013', accessCode: '8CDKBF', fullName: 'ברכה דעבול', role: 'מנהלת בית הספר', organization: 'מורשת זבולון', partnerName: 'אנסטסיה זהר מדר', partnerRole: 'מנהלת רווחה וחוויית עובדים' },
+    { participantId: 'P001', accessCode: 'netanya248', fullName: 'גילת סיימון', role: 'מנהלת אגף החינוך העל-יסודי', organization: 'עיריית נתניה', partnerName: 'אורית טסלר לוי', partnerRole: 'סמנכ"לית' },
+    { participantId: 'P002', accessCode: 'netanya361', fullName: 'אושרית ונדן', role: 'צוות ניהול', organization: 'אולפנית בר אילן', partnerName: 'ד"ר אורנית כהן', partnerRole: 'ראש רשות המחקר והחדשנות' },
+    { participantId: 'P003', accessCode: 'netanya475', fullName: 'יהודית', role: 'צוות ניהול', organization: 'אולפנית בר אילן', partnerName: 'ד"ר אורנית כהן', partnerRole: 'ראש רשות המחקר והחדשנות' },
+    { participantId: 'P004', accessCode: 'netanya582', fullName: 'בת-חן שטדלר', role: 'צוות ניהול', organization: 'אולפנית בר אילן', partnerName: 'ד"ר אורנית כהן', partnerRole: 'ראש רשות המחקר והחדשנות' },
+    { participantId: 'P005', accessCode: 'netanya694', fullName: 'סמדר דביר', role: 'צוות ניהול', organization: 'טשרניחובסקי', partnerName: 'עידן ופנר', partnerRole: 'סמנכ"ל טכנולוגיות' },
+    { participantId: 'P006', accessCode: 'netanya713', fullName: 'אושר תבורי', role: 'צוות ניהול', organization: 'טשרניחובסקי', partnerName: 'עידן ופנר', partnerRole: 'סמנכ"ל טכנולוגיות' },
+    { participantId: 'P007', accessCode: 'netanya826', fullName: 'ענבל שרף', role: 'מנהלת בית הספר', organization: 'אלתרמן', partnerName: 'נתן ברק', partnerRole: 'מנכ"ל' },
+    { participantId: 'P008', accessCode: 'netanya937', fullName: 'שוש קיפר', role: 'צוות ניהול', organization: 'חיים גורי', partnerName: 'לריסה אמיר', partnerRole: 'מנכ"לית' },
+    { participantId: 'P009', accessCode: 'netanya154', fullName: 'עינב כהן', role: 'צוות ניהול', organization: 'חיים גורי', partnerName: 'לריסה אמיר', partnerRole: 'מנכ"לית' },
+    { participantId: 'P010', accessCode: 'netanya269', fullName: 'גלית פישר', role: 'צוות ניהול', organization: 'חיים גורי', partnerName: 'לריסה אמיר', partnerRole: 'מנכ"לית' },
+    { participantId: 'P011', accessCode: 'netanya384', fullName: 'סיגלית כהן', role: 'צוות ניהול', organization: 'שי עגנון', partnerName: 'רון שניר', partnerRole: 'מנכ"ל' },
+    { participantId: 'P012', accessCode: 'netanya507', fullName: 'נירית כהן', role: 'מנהלת בית הספר', organization: 'שחפים', partnerName: 'רגין שבח', partnerRole: 'מנכ"לית' },
+    { participantId: 'P013', accessCode: 'netanya618', fullName: 'ברכה דעבול', role: 'מנהלת בית הספר', organization: 'מורשת זבולון', partnerName: 'אנסטסיה זהר מדר', partnerRole: 'מנהלת רווחה וחוויית עובדים' },
   ];
 }
 
@@ -1263,14 +1262,14 @@ async function loadAllData() {
       state.participants = partResult.participants;
       state.filteredParticipants = [...state.participants];
     } else {
-      showToast('שגיאה בטעינת משתתפים: ' + (partResult.error || 'שגיאה לא ידועה'), '');
+      showToast('שגיאה: ' + (partResult.error || 'לא ניתן לטעון משתתפים'), '');
     }
 
     if (respResult.success) {
       state.responses = respResult.responses;
       state.filteredResponses = [...state.responses];
     } else {
-      showToast('שגיאה בטעינת תשובות: ' + (respResult.error || 'שגיאה לא ידועה'), '');
+      showToast('שגיאה: ' + (respResult.error || 'לא ניתן לטעון תשובות'), '');
     }
 
     renderStats();
@@ -1279,7 +1278,7 @@ async function loadAllData() {
     renderResponses();
     renderActions();
   } catch(e) {
-    showToast('שגיאת חיבור לשרת — ' + e.message, '');
+    showToast('שגיאת חיבור לשרת: ' + e.message, '');
   }
 }
 
@@ -1583,9 +1582,7 @@ function showToast(msg, type) {
 }
 
 // Check local storage for existing admin session
-if (DEMO_MODE) {
-  document.getElementById('adminPassInput').placeholder = 'admin2025';
-}
+
 </script>
 </body>
 </html>
