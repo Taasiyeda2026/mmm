@@ -1110,7 +1110,7 @@ input.field-input::placeholder {
 <script>
 // ═══════════════════════════ CONFIG ═══════════════════════════
 // Replace with your deployed Google Apps Script URL
-const API_URL = 'https://script.google.com/macros/s/AKfycbxPIaTLeODpZhk_lNjGzUIrDTfIxzD_6K2phUok4nqD4B0md7NWA-plhbrrKVv8YsYW/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycby1lW6GFyHvfKigWDmPgtMUI1V9vDy57-VDI-rEBNhQGVO7RXD5ok2f7gGojjarbmyTLA/exec';
 
 // For demo/local use without backend:
 const DEMO_MODE = !API_URL.startsWith('https://script');
@@ -1163,7 +1163,7 @@ async function apiCall(action, body = {}) {
 
   const res = await fetch(API_URL, {
     method: 'POST',
-    
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ action, ...body })
   });
   return res.json();
