@@ -1163,7 +1163,7 @@ async function apiCall(action, body = {}) {
 
   const res = await fetch(API_URL, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    
     body: JSON.stringify({ action, ...body })
   });
   return res.json();
