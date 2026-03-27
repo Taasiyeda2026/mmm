@@ -1033,7 +1033,7 @@ async function apiCall(action, body = {}) {
   if (DEMO_MODE) return demoApi(action, body);
   const res = await fetch(API_URL, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    
     body: JSON.stringify({ action, token: state.token, ...body })
   });
   return res.json();
