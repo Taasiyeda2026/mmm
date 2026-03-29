@@ -1094,14 +1094,27 @@ tbody td {
       </div>
       <div class="page-content">
         <div class="table-wrap" style="padding:24px">
-          <div style="margin-bottom:20px">
-            <label class="filter-label" style="display:block;margin-bottom:8px">בחר/י משתתף לדוח</label>
-            <select id="pdfParticipantSelect" class="filter-select" style="min-width:260px">
-              <option value="">— כל המשתתפים —</option>
-            </select>
+          <div style="display:flex;gap:24px;flex-wrap:wrap;margin-bottom:8px">
+            <div>
+              <label class="filter-label" style="display:block;margin-bottom:8px">משתתף</label>
+              <select id="pdfParticipantSelect" class="filter-select" style="min-width:260px">
+                <option value="">— כל המשתתפים —</option>
+              </select>
+            </div>
+            <div>
+              <label class="filter-label" style="display:block;margin-bottom:8px">מפגש</label>
+              <select id="pdfSessionSelect" class="filter-select">
+                <option value="">— כל המפגשים —</option>
+                <option value="1">מפגש 1 — תרבות ארגונית</option>
+                <option value="2">מפגש 2 — חדשנות טכנולוגית</option>
+                <option value="3">מפגש 3 — ניהול פרויקטים</option>
+                <option value="4">מפגש 4 — ניהול משברים</option>
+                <option value="5">מפגש 5 — שותפויות ומיתוג</option>
+              </select>
+            </div>
           </div>
           <div id="pdfPreview" style="margin-top:16px;color:var(--text-muted);font-size:13px">
-            בחר/י משתתף או השאר/י ריק לדוח כולל
+            בחר/י משתתף ו/או מפגש, או השאר/י ריק לדוח כולל
           </div>
         </div>
       </div>
@@ -1635,9 +1648,11 @@ function populatePdfSelect() {
 
 function generatePDF() {
   const selCode = document.getElementById('pdfParticipantSelect').value;
+  const selSession = document.getElementById('pdfSessionSelect').value;
   const participants = selCode
     ? state.participants.filter(p => (p.accessCode || p.participantId) === selCode)
     : state.participants;
+  const sessionsToShow = selSession ? [parseInt(selSession)] : [1,2,3,4,5];
 
   const SESSIONS_DATA = {
     1: { title: 'תרבות ארגונית וניהול מבוסס ערכים',          question: 'איזה ערך ארגוני אני רוצה לחזק כעת, וכיצד הוא צריך לבוא לידי ביטוי בניהול היומיומי?' },
@@ -1682,12 +1697,13 @@ function generatePDF() {
   .participant-strip {
     background: #f7f5f1; border-right: 4px solid #b8913a;
     border-radius: 8px; padding: 12px 18px; margin-bottom: 16px;
-    display: flex; gap: 28px; align-items: center; flex-wrap: wrap;
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
   }
-  .ps-field { display: flex; flex-direction: column; }
-  .ps-label { font-size: 9px; font-weight: 700; color: #9a9690; letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 2px; }
-  .ps-value { font-size: 14px; font-weight: 600; color: #1a1814; }
-  .ps-value.light { font-weight: 500; font-size: 13px; }
+  .ps-main { flex: 1; }
+  .ps-name { font-size: 16px; font-weight: 700; color: #1a1814; margin-bottom: 3px; }
+  .ps-sub { font-size: 13px; color: #5a5550; margin-bottom: 2px; }
+  .ps-partner { font-size: 12px; color: #9a9690; }
+  .ps-session-badge { background: #b8913a; color: #fff; border-radius: 8px; padding: 6px 14px; font-size: 16px; font-weight: 700; white-space: nowrap; }
 
   /* ── SESSION TITLE BLOCK ── */
   .session-title-block {
@@ -1783,29 +1799,18 @@ function generatePDF() {
       <div class="pdf-header-date">${today}</div>
     </div>`;
 
-  const participantStripHtml = (p, s, total) => `
+  const participantStripHtml = (p, s, total) => {
+    const partnerDetail = [p.partnerName, p.partnerRole, p.partnerOrganization].filter(Boolean).join(' | ');
+    return `
     <div class="participant-strip">
-      <div class="ps-field">
-        <div class="ps-label">שם</div>
-        <div class="ps-value">${p.fullName || '—'}</div>
+      <div class="ps-main">
+        <div class="ps-name">${p.fullName || '—'}</div>
+        <div class="ps-sub">${p.role || ''}${p.organization ? ' — ' + p.organization : ''}</div>
+        ${partnerDetail ? `<div class="ps-partner">שותף/ה: ${partnerDetail}</div>` : ''}
       </div>
-      <div class="ps-field">
-        <div class="ps-label">תפקיד</div>
-        <div class="ps-value light">${p.role || '—'}</div>
-      </div>
-      <div class="ps-field">
-        <div class="ps-label">בית ספר / ארגון</div>
-        <div class="ps-value light">${p.organization || '—'}</div>
-      </div>
-      <div class="ps-field">
-        <div class="ps-label">שותף/ה</div>
-        <div class="ps-value light" style="font-size:12px">${p.partnerName || '—'}</div>
-      </div>
-      <div class="ps-field" style="margin-right:auto;text-align:left">
-        <div class="ps-label">מפגש</div>
-        <div class="ps-value" style="color:#b8913a">${s} / ${total}</div>
-      </div>
+      <div class="ps-session-badge">${s}/${total}</div>
     </div>`;
+  };
 
   participants.forEach(p => {
     const pResponses = state.responses.filter(r =>
@@ -1813,7 +1818,7 @@ function generatePDF() {
     );
 
     // Each session = one page
-    for (let s = 1; s <= 5; s++) {
+    for (const s of sessionsToShow) {
       const r = pResponses.find(x => String(x.sessionNumber) === String(s));
       const sess = SESSIONS_DATA[s];
       const isSubmitted = r && (r.isSubmitted === 'TRUE' || r.isSubmitted === true);
