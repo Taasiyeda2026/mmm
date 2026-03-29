@@ -1575,6 +1575,7 @@ async function addParticipant() {
     document.getElementById('newCodeResult').style.display = 'block';
     showToast('משתתף נוצר בהצלחה', 'success');
     loadAllData();
+    showPage('participants');
   }
 }
 
@@ -1617,6 +1618,9 @@ function showPage(page) {
   document.getElementById(`page-${page}`).style.display = 'block';
   const navEl = document.getElementById(`nav-${page}`);
   if (navEl) navEl.classList.add('active');
+  if (['overview', 'participants', 'responses', 'actions'].includes(page)) {
+    loadAllData();
+  }
 }
 
 function showScreen(id) {
