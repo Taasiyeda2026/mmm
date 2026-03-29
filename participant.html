@@ -1584,7 +1584,7 @@ function renderDashboard() {
   document.getElementById('progressFill').style.width = `${(completed / 5) * 100}%`;
 
   const grid = document.getElementById('sessionsGrid');
-  grid.innerHTML = SESSIONS.map(s => {
+  grid.innerHTML = SESSIONS.map((s, idx) => {
     const data = state.sessions[s.number];
     const isCompleted = data && (data.isSubmitted === 'TRUE' || data.isSubmitted === true);
     const delayClass = ['', 'fade-in-delay-1', 'fade-in-delay-2', 'fade-in-delay-3', 'fade-in-delay-3'][idx] || '';
