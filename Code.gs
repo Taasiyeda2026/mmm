@@ -2,11 +2,11 @@
 // מנהל מאמץ מנהל — Google Apps Script Backend
 // ============================================================
 
-const SPREADSHEET_ID = 'YOUR_SPREADSHEET_ID_HERE'; // ← הכנס את ה-ID של ה-Sheet שלך
-const ADMIN_PASSWORD = 'admin2025'; // ← שנה לסיסמה חזקה
+const SPREADSHEET_ID = '1y3DWf3LULs7JRFSUNhg9pjfr7fTvKOaufUXBt0tyNZ0';
+const ADMIN_PASSWORDS = ['yael123', 'idan123'];
 
 // ============================================================
-// MAIN ROUTER — כל בקשות POST/GET מגיעות לכאן
+// MAIN ROUTER
 // ============================================================
 
 function doGet(e) {
@@ -16,14 +16,13 @@ function doGet(e) {
 }
 
 function doPost(e) {
-  const headers = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type'
-  };
-  
   try {
-    const body = JSON.parse(e.postData.contents);
+    let body;
+    try {
+      body = JSON.parse(e.postData.contents);
+    } catch(parseErr) {
+      body = e.parameter || {};
+    }
     const action = body.action;
     let result;
 
@@ -53,6 +52,12 @@ function doPost(e) {
   }
 }
 
+function doOptions(e) {
+  return ContentService
+    .createTextOutput('')
+    .setMimeType(ContentService.MimeType.TEXT);
+}
+
 // ============================================================
 // PARTICIPANT AUTH
 // ============================================================
@@ -66,7 +71,7 @@ function handleLogin(body) {
   const data = sheet.getDataRange().getValues();
   
   for (let i = 1; i < data.length; i++) {
-    if (data[i][1] === accessCode.toUpperCase()) {
+    if (data[i][1].toString().toLowerCase() === accessCode.toString().toLowerCase()) {
       return {
         success: true,
         participant: {
@@ -76,7 +81,8 @@ function handleLogin(body) {
           role: data[i][3],
           organization: data[i][4],
           partnerName: data[i][5],
-          partnerRole: data[i][6]
+          partnerRole: data[i][6],
+          partnerOrganization: data[i][7] || ''
         }
       };
     }
@@ -89,7 +95,7 @@ function handleGetParticipant(body) {
 }
 
 // ============================================================
-// GET PARTICIPANT NAMES (no auth required — names only)
+// GET PARTICIPANT NAMES
 // ============================================================
 
 function handleGetParticipantNames() {
@@ -99,7 +105,7 @@ function handleGetParticipantNames() {
   
   const names = [];
   for (let i = 1; i < data.length; i++) {
-    if (data[i][2]) { // fullName exists
+    if (data[i][2]) {
       names.push({
         accessCode: data[i][1],
         fullName: data[i][2],
@@ -107,7 +113,6 @@ function handleGetParticipantNames() {
       });
     }
   }
-  // Sort alphabetically by name
   names.sort((a, b) => a.fullName.localeCompare(b.fullName, 'he'));
   return { success: true, names };
 }
@@ -120,31 +125,56 @@ function handleSaveSession(body) {
   const { accessCode, sessionNumber, data: sessionData } = body;
   if (!accessCode || !sessionNumber) return { success: false, error: 'נתונים חסרים' };
 
-  // Validate participant
   const loginResult = handleLogin({ accessCode });
   if (!loginResult.success) return loginResult;
 
   const participant = loginResult.participant;
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = ss.getSheetByName('Responses');
-  const allData = sheet.getDataRange().getValues();
-  
   const now = new Date().toISOString();
   const rowData = buildResponseRow(participant, sessionNumber, sessionData, now);
 
-  // Check if row exists
+  const sheetName = 'Session' + sessionNumber;
+  let sheet = ss.getSheetByName(sheetName);
+  if (!sheet) {
+    sheet = ss.insertSheet(sheetName);
+    const headers = [
+      'participantId','accessCode','fullName','role','organization',
+      'partnerName','partnerRole','sessionTitle','sessionNumber',
+      'createdAt','updatedAt','relevanceScore','dialogueStatus',
+      'mainInsight','centralIdea','dialogueTopic','dialogueReflection',
+      'organizationalConnection','managementChallenge','actionCommitment',
+      'progressDefinition','supportNeeded','summarySentence',
+      'customSessionQuestionAnswer','sessionDate','isSubmitted','lastEditedByParticipant'
+    ];
+    sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+  }
+
+  const allData = sheet.getDataRange().getValues();
+
   for (let i = 1; i < allData.length; i++) {
-    if (allData[i][0] === participant.participantId && allData[i][8] === sessionNumber) {
-      // Update existing row
-      const range = sheet.getRange(i + 1, 1, 1, rowData.length);
-      range.setValues([rowData]);
+    if (allData[i][0] === participant.participantId) {
+      sheet.getRange(i + 1, 1, 1, rowData.length).setValues([rowData]);
+      updateMasterSheet(ss, participant.participantId, sessionNumber, rowData);
       return { success: true, message: 'עודכן בהצלחה', updatedAt: now };
     }
   }
 
-  // Append new row
   sheet.appendRow(rowData);
+  updateMasterSheet(ss, participant.participantId, sessionNumber, rowData);
   return { success: true, message: 'נשמר בהצלחה', createdAt: now };
+}
+
+function updateMasterSheet(ss, participantId, sessionNumber, rowData) {
+  let sheet = ss.getSheetByName('Responses');
+  if (!sheet) return;
+  const allData = sheet.getDataRange().getValues();
+  for (let i = 1; i < allData.length; i++) {
+    if (allData[i][0] === participantId && String(allData[i][8]) === String(sessionNumber)) {
+      sheet.getRange(i + 1, 1, 1, rowData.length).setValues([rowData]);
+      return;
+    }
+  }
+  sheet.appendRow(rowData);
 }
 
 function handleGetSession(body) {
@@ -154,18 +184,23 @@ function handleGetSession(body) {
 
   const participant = loginResult.participant;
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = ss.getSheetByName('Responses');
+
+  const sheetName = 'Session' + sessionNumber;
+  let sheet = ss.getSheetByName(sheetName);
+  if (!sheet) sheet = ss.getSheetByName('Responses');
+  if (!sheet) return { success: true, data: null };
+
   const allData = sheet.getDataRange().getValues();
   const headers = allData[0];
 
   for (let i = 1; i < allData.length; i++) {
-    if (allData[i][0] === participant.participantId && allData[i][8] === sessionNumber) {
+    if (allData[i][0] === participant.participantId && String(allData[i][8]) === String(sessionNumber)) {
       const row = {};
       headers.forEach((h, idx) => { row[h] = allData[i][idx]; });
       return { success: true, data: row };
     }
   }
-  return { success: true, data: null }; // No data yet
+  return { success: true, data: null };
 }
 
 function handleGetAllSessions(body) {
@@ -175,16 +210,20 @@ function handleGetAllSessions(body) {
 
   const participant = loginResult.participant;
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = ss.getSheetByName('Responses');
-  const allData = sheet.getDataRange().getValues();
-  const headers = allData[0];
 
   const sessions = {};
-  for (let i = 1; i < allData.length; i++) {
-    if (allData[i][0] === participant.participantId) {
-      const row = {};
-      headers.forEach((h, idx) => { row[h] = allData[i][idx]; });
-      sessions[allData[i][8]] = row;
+  for (let s = 1; s <= 5; s++) {
+    const sheetName = 'Session' + s;
+    const sheet = ss.getSheetByName(sheetName);
+    if (!sheet) continue;
+    const allData = sheet.getDataRange().getValues();
+    const headers = allData[0];
+    for (let i = 1; i < allData.length; i++) {
+      if (allData[i][0] === participant.participantId) {
+        const row = {};
+        headers.forEach((h, idx) => { row[h] = allData[i][idx]; });
+        sessions[s] = row;
+      }
     }
   }
   return { success: true, sessions };
@@ -195,8 +234,9 @@ function handleGetAllSessions(body) {
 // ============================================================
 
 function handleAdminLogin(body) {
-  if (body.password === ADMIN_PASSWORD) {
-    return { success: true, token: 'admin_' + Utilities.base64Encode(new Date().getTime().toString()) };
+  if (ADMIN_PASSWORDS.includes(body.password)) {
+    const adminName = body.password === 'yael123' ? 'יעל אביב' : 'עידן נחום';
+    return { success: true, token: 'admin_valid', adminName };
   }
   return { success: false, error: 'סיסמה שגויה' };
 }
@@ -206,21 +246,35 @@ function handleAdminGetAll(body) {
 
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const pSheet = ss.getSheetByName('Participants');
-  const rSheet = ss.getSheetByName('Responses');
-
   const participants = sheetToObjects(pSheet);
-  const responses = sheetToObjects(rSheet);
 
-  // Build completion map
+  const allResponses = [];
+  const masterSheet = ss.getSheetByName('Responses');
+  if (masterSheet) sheetToObjects(masterSheet).forEach(r => allResponses.push(r));
+  for (let s = 1; s <= 5; s++) {
+    const sSheet = ss.getSheetByName('Session' + s);
+    if (sSheet) sheetToObjects(sSheet).forEach(r => allResponses.push(r));
+  }
+
+  const responseMap = {};
+  allResponses.forEach(r => {
+    const key = r.participantId + '_' + r.sessionNumber;
+    if (!responseMap[key] || r.updatedAt > (responseMap[key].updatedAt || '')) {
+      responseMap[key] = r;
+    }
+  });
+  const responses = Object.values(responseMap);
+
   const completionMap = {};
   responses.forEach(r => {
     if (!completionMap[r.participantId]) {
       completionMap[r.participantId] = { 1: false, 2: false, 3: false, 4: false, 5: false };
     }
+    const sessionNum = parseInt(r.sessionNumber);
     if (r.isSubmitted === 'TRUE' || r.isSubmitted === true) {
-      completionMap[r.participantId][r.sessionNumber] = true;
-    } else {
-      completionMap[r.participantId][r.sessionNumber] = 'draft';
+      completionMap[r.participantId][sessionNum] = true;
+    } else if (r.isSubmitted === 'FALSE' || r.isSubmitted === false) {
+      completionMap[r.participantId][sessionNum] = 'draft';
     }
   });
 
@@ -236,10 +290,24 @@ function handleAdminGetResponses(body) {
   if (!validateAdmin(body)) return { success: false, error: 'Unauthorized' };
 
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = ss.getSheetByName('Responses');
-  const responses = sheetToObjects(sheet);
 
-  // Optional filters
+  const allResponses = [];
+  const masterSheet = ss.getSheetByName('Responses');
+  if (masterSheet) sheetToObjects(masterSheet).forEach(r => allResponses.push(r));
+  for (let s = 1; s <= 5; s++) {
+    const sSheet = ss.getSheetByName('Session' + s);
+    if (sSheet) sheetToObjects(sSheet).forEach(r => allResponses.push(r));
+  }
+
+  const responseMap = {};
+  allResponses.forEach(r => {
+    const key = r.participantId + '_' + r.sessionNumber;
+    if (!responseMap[key] || r.updatedAt > (responseMap[key].updatedAt || '')) {
+      responseMap[key] = r;
+    }
+  });
+  const responses = Object.values(responseMap);
+
   const { participantId, sessionNumber, searchQuery } = body;
   let filtered = responses;
 
@@ -247,9 +315,7 @@ function handleAdminGetResponses(body) {
   if (sessionNumber) filtered = filtered.filter(r => r.sessionNumber == sessionNumber);
   if (searchQuery) {
     const q = searchQuery.toLowerCase();
-    filtered = filtered.filter(r =>
-      JSON.stringify(r).toLowerCase().includes(q)
-    );
+    filtered = filtered.filter(r => JSON.stringify(r).toLowerCase().includes(q));
   }
 
   return { success: true, responses: filtered };
@@ -258,7 +324,7 @@ function handleAdminGetResponses(body) {
 function handleAdminAddParticipant(body) {
   if (!validateAdmin(body)) return { success: false, error: 'Unauthorized' };
 
-  const { fullName, role, organization, partnerName, partnerRole } = body;
+  const { fullName, role, organization, partnerName, partnerRole, partnerOrganization } = body;
   if (!fullName) return { success: false, error: 'שם חסר' };
 
   const participantId = 'P' + new Date().getTime();
@@ -266,7 +332,7 @@ function handleAdminAddParticipant(body) {
 
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const sheet = ss.getSheetByName('Participants');
-  sheet.appendRow([participantId, accessCode, fullName, role || '', organization || '', partnerName || '', partnerRole || '', new Date().toISOString()]);
+  sheet.appendRow([participantId, accessCode, fullName, role || '', organization || '', partnerName || '', partnerRole || '', partnerOrganization || '', new Date().toISOString()]);
 
   return { success: true, participantId, accessCode };
 }
@@ -276,12 +342,24 @@ function handleAdminExport(body) {
 
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const pSheet = ss.getSheetByName('Participants');
-  const rSheet = ss.getSheetByName('Responses');
+
+  const allResponses = [];
+  const masterSheet = ss.getSheetByName('Responses');
+  if (masterSheet) sheetToObjects(masterSheet).forEach(r => allResponses.push(r));
+  for (let s = 1; s <= 5; s++) {
+    const sSheet = ss.getSheetByName('Session' + s);
+    if (sSheet) sheetToObjects(sSheet).forEach(r => allResponses.push(r));
+  }
+  const responseMap = {};
+  allResponses.forEach(r => {
+    const key = r.participantId + '_' + r.sessionNumber;
+    if (!responseMap[key] || r.updatedAt > (responseMap[key].updatedAt || '')) responseMap[key] = r;
+  });
 
   return {
     success: true,
     participants: sheetToObjects(pSheet),
-    responses: sheetToObjects(rSheet),
+    responses: Object.values(responseMap),
     exportedAt: new Date().toISOString()
   };
 }
@@ -291,8 +369,7 @@ function handleAdminExport(body) {
 // ============================================================
 
 function validateAdmin(body) {
-  // Simple token check — in production use a more robust method
-  return body.token && body.token.startsWith('admin_');
+  return body.token === 'admin_valid';
 }
 
 function generateCode() {
@@ -325,92 +402,32 @@ function buildResponseRow(participant, sessionNumber, d, now) {
   };
 
   return [
-    participant.participantId,          // participantId
-    participant.accessCode,             // accessCode
-    participant.fullName,               // fullName
-    participant.role,                   // role
-    participant.organization,           // organization
-    participant.partnerName,            // partnerName
-    participant.partnerRole,            // partnerRole
-    sessionTitles[sessionNumber] || '',  // sessionTitle
-    sessionNumber,                      // sessionNumber
-    d.createdAt || now,                 // createdAt
-    now,                                // updatedAt
-    d.relevanceScore || '',             // relevanceScore
-    d.dialogueStatus || '',             // dialogueStatus
-    d.mainInsight || '',                // mainInsight
-    d.centralIdea || '',                // centralIdea
-    d.dialogueTopic || '',              // dialogueTopic
-    d.dialogueReflection || '',         // dialogueReflection
-    d.organizationalConnection || '',   // organizationalConnection
-    d.managementChallenge || '',        // managementChallenge
-    d.actionCommitment || '',           // actionCommitment
-    d.progressDefinition || '',         // progressDefinition
-    d.supportNeeded || '',              // supportNeeded
-    d.summarySentence || '',            // summarySentence
-    d.sharingPermission || 'private',   // sharingPermission
-    d.customSessionQuestionAnswer || '', // customSessionQuestionAnswer
-    d.sessionDate || '',                // sessionDate
-    d.isSubmitted ? 'TRUE' : 'FALSE',   // isSubmitted
-    participant.participantId           // lastEditedByParticipant
+    participant.participantId,
+    participant.accessCode,
+    participant.fullName,
+    participant.role,
+    participant.organization,
+    participant.partnerName,
+    participant.partnerRole,
+    sessionTitles[sessionNumber] || '',
+    sessionNumber,
+    d.createdAt || now,
+    now,
+    d.relevanceScore || '',
+    d.dialogueStatus || '',
+    d.mainInsight || '',
+    d.centralIdea || '',
+    d.dialogueTopic || '',
+    d.dialogueReflection || '',
+    d.organizationalConnection || '',
+    d.managementChallenge || '',
+    d.actionCommitment || '',
+    d.progressDefinition || '',
+    d.supportNeeded || '',
+    d.summarySentence || '',
+    d.customSessionQuestionAnswer || '',
+    d.sessionDate || '',
+    d.isSubmitted ? 'TRUE' : 'FALSE',
+    participant.participantId
   ];
-}
-
-// ============================================================
-// SETUP — Run once to create sheet structure
-// ============================================================
-
-function setupSpreadsheet() {
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-
-  // --- Participants Tab ---
-  let pSheet = ss.getSheetByName('Participants');
-  if (!pSheet) pSheet = ss.insertSheet('Participants');
-  pSheet.clearContents();
-  pSheet.getRange(1, 1, 1, 8).setValues([[
-    'participantId', 'accessCode', 'fullName', 'role',
-    'organization', 'partnerName', 'partnerRole', 'createdAt'
-  ]]);
-
-  // Seed data
-  const seeds = [
-    ['P001', 'ALPHA1', 'ד"ר רחל כהן', 'מנהלת בית ספר', 'חינוך ועתיד', 'אבי לוי', 'מנהל פדגוגי', new Date().toISOString()],
-    ['P002', 'BETA22', 'יוסי מזרחי', 'מנהל מחלקה', 'עיריית תל אביב', 'נועה ברק', 'מנהלת HR', new Date().toISOString()],
-    ['P003', 'GAMMA3', 'מירי שפירא', 'סמנכ"לית תפעול', 'קבוצת אלוני', 'דני גל', 'יועץ אסטרטגי', new Date().toISOString()],
-    ['P004', 'DELTA4', 'עמית רוזן', 'מנהל תחום', 'מכון ויצמן', 'תמר אור', 'מנהלת פרויקטים', new Date().toISOString()],
-    ['P005', 'EPSI55', 'שרה ברנשטיין', 'מנהלת אזורית', 'חברת סיקו', 'רן שמיר', 'מנהל שיווק', new Date().toISOString()],
-  ];
-  seeds.forEach(row => pSheet.appendRow(row));
-
-  // --- Responses Tab ---
-  let rSheet = ss.getSheetByName('Responses');
-  if (!rSheet) rSheet = ss.insertSheet('Responses');
-  rSheet.clearContents();
-  rSheet.getRange(1, 1, 1, 27).setValues([[
-    'participantId', 'accessCode', 'fullName', 'role', 'organization',
-    'partnerName', 'partnerRole', 'sessionTitle', 'sessionNumber',
-    'createdAt', 'updatedAt', 'relevanceScore', 'dialogueStatus',
-    'mainInsight', 'centralIdea', 'dialogueTopic', 'dialogueReflection',
-    'organizationalConnection', 'managementChallenge', 'actionCommitment',
-    'progressDefinition', 'supportNeeded', 'summarySentence',
-    'customSessionQuestionAnswer', 'sessionDate', 'isSubmitted', 'lastEditedByParticipant'
-  ]]);
-
-  // --- Settings Tab ---
-  let sSheet = ss.getSheetByName('Settings');
-  if (!sSheet) sSheet = ss.insertSheet('Settings');
-  sSheet.clearContents();
-  sSheet.getRange(1, 1, 1, 2).setValues([['key', 'value']]);
-  sSheet.appendRow(['programName', 'מנהל מאמץ מנהל']);
-  sSheet.appendRow(['adminPassword', ADMIN_PASSWORD]);
-  sSheet.appendRow(['totalSessions', '5']);
-  sSheet.appendRow(['createdAt', new Date().toISOString()]);
-
-  // --- Export Tab ---
-  let eSheet = ss.getSheetByName('Export');
-  if (!eSheet) eSheet = ss.insertSheet('Export');
-  eSheet.clearContents();
-  eSheet.getRange(1, 1).setValue('לשימוש ייצוא — ייוצר אוטומטית');
-
-  return 'Setup complete!';
 }
