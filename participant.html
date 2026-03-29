@@ -188,6 +188,55 @@ body {
   text-align: right;
 }
 
+.code-panel {
+  margin-top: 16px;
+  padding: 20px;
+  background: var(--gold-dim);
+  border: 1px solid rgba(184,145,58,0.25);
+  border-radius: 10px;
+  animation: fadeIn 0.2s ease;
+}
+.code-panel-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 12px;
+  text-align: right;
+}
+.code-panel-input {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 16px;
+  color: var(--text);
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 500;
+  letter-spacing: 0.15em;
+  text-align: center;
+  outline: none;
+  transition: border-color 0.2s;
+  direction: ltr;
+  margin-bottom: 12px;
+}
+.code-panel-input:focus { border-color: var(--gold); }
+.code-panel-btn {
+  width: 100%;
+  background: var(--gold);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius);
+  padding: 11px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: var(--font-body);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.code-panel-btn:hover { background: var(--gold-light); }
+.code-panel-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
 .code-input {
   width: 100%;
   background: var(--bg);
@@ -1039,6 +1088,16 @@ input.field-input::placeholder {
           <span style="margin-right:10px;font-size:13px;color:var(--text-muted)">טוען משתתפים...</span>
         </div>
       </div>
+      <div id="codePanel" style="display:none">
+        <div class="code-panel">
+          <div class="code-panel-name" id="codePanelName"></div>
+          <input class="code-panel-input" type="password" id="codePanelInput"
+            placeholder="הכנס/י קוד אישי"
+            maxlength="20"
+            onkeydown="if(event.key==='Enter') doCodeLogin()">
+          <button class="code-panel-btn" id="codePanelBtn" onclick="doCodeLogin()">כניסה ←</button>
+        </div>
+      </div>
       <div class="error-msg" id="loginError"></div>
     </div>
 
@@ -1110,7 +1169,7 @@ input.field-input::placeholder {
 <script>
 // ═══════════════════════════ CONFIG ═══════════════════════════
 // Replace with your deployed Google Apps Script URL
-const API_URL = 'https://script.google.com/macros/s/AKfycbwL54J4y9wRXPl9j0Jhx1_dMa1W3TnDLFNSsTciytQoh_TFNGpBrzJm8TgnmlrwGLBvoA/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbzEbMpwJSRx0-oDcDw6T5Q9n62cF7jsi6CJT_JWqmmfJu820GF5BGrGQaZlysTvXCv1Fg/exec';
 
 // For demo/local use without backend:
 const DEMO_MODE = false;
@@ -1269,7 +1328,7 @@ async function loadNamesList() {
     const groupId = 'group_' + idx;
 
     const memberBtns = members.map(p => `
-      <button class="name-btn" onclick="selectParticipant('${p.accessCode}')">
+      <button class="name-btn" onclick="showCodePanel('${p.accessCode}', '${p.fullName}', this)">
         <span class="name-btn-text">${p.fullName}</span>
         <svg class="name-btn-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M5 12h14M12 5l7 7-7 7"/>
@@ -1305,19 +1364,59 @@ function toggleSchool(groupId, btn) {
   }
 }
 
-async function selectParticipant(accessCode) {
-  // Disable all buttons during login
-  document.querySelectorAll('.name-btn').forEach(b => b.disabled = true);
+let _pendingAccessCode = null;
+let _pendingBtn = null;
 
-  const result = await apiCall('login', { accessCode });
+function showCodePanel(accessCode, fullName, btn) {
+  // Deactivate all name buttons
+  document.querySelectorAll('.name-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+
+  _pendingAccessCode = accessCode;
+  _pendingBtn = btn;
+
+  document.getElementById('codePanelName').textContent = 'כניסה עבור: ' + fullName;
+  document.getElementById('codePanelInput').value = '';
+  document.getElementById('codePanel').style.display = 'block';
+  hideError();
+
+  // Scroll to panel and focus
+  setTimeout(() => {
+    document.getElementById('codePanel').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    document.getElementById('codePanelInput').focus();
+  }, 100);
+}
+
+async function doCodeLogin() {
+  const enteredCode = document.getElementById('codePanelInput').value.trim();
+  if (!enteredCode) { showError('יש להזין קוד אישי'); return; }
+  if (!_pendingAccessCode) return;
+
+  const btn = document.getElementById('codePanelBtn');
+  btn.disabled = true;
+  btn.textContent = 'מתחבר...';
+
+  // The accessCode IS the personal code — verify they match
+  if (enteredCode.toLowerCase() !== _pendingAccessCode.toString().toLowerCase()) {
+    showError('קוד שגוי — נסה/י שנית');
+    btn.disabled = false;
+    btn.textContent = 'כניסה ←';
+    document.getElementById('codePanelInput').value = '';
+    document.getElementById('codePanelInput').focus();
+    return;
+  }
+
+  const result = await apiCall('login', { accessCode: _pendingAccessCode });
 
   if (result.success) {
     state.participant = result.participant;
     hideError();
+    document.getElementById('codePanel').style.display = 'none';
     await showDashboard();
   } else {
     showError('שגיאה בטעינת הנתונים — נסה/י שנית');
-    document.querySelectorAll('.name-btn').forEach(b => b.disabled = false);
+    btn.disabled = false;
+    btn.textContent = 'כניסה ←';
   }
 }
 

@@ -871,7 +871,16 @@ tbody td {
           <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
           <polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
         </svg>
-        ייצוא נתונים
+        ייצוא CSV
+      </div>
+      <div class="nav-item" onclick="showPage('exportPdf')" id="nav-exportPdf">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+          <line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
+          <polyline points="10 9 9 9 8 9"/>
+        </svg>
+        ייצוא PDF
       </div>
     </div>
 
@@ -1069,6 +1078,35 @@ tbody td {
         </div>
       </div>
     </div>
+    <!-- ═ EXPORT PDF ═ -->
+    <div id="page-exportPdf" class="page-section" style="display:none">
+      <div class="main-header">
+        <div class="main-header-title">ייצוא PDF</div>
+        <div class="header-actions">
+          <button class="btn-sm-gold" onclick="generatePDF()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+            </svg>
+            הורד PDF
+          </button>
+        </div>
+      </div>
+      <div class="page-content">
+        <div class="table-wrap" style="padding:24px">
+          <div style="margin-bottom:20px">
+            <label class="filter-label" style="display:block;margin-bottom:8px">בחר/י משתתף לדוח</label>
+            <select id="pdfParticipantSelect" class="filter-select" style="min-width:260px">
+              <option value="">— כל המשתתפים —</option>
+            </select>
+          </div>
+          <div id="pdfPreview" style="margin-top:16px;color:var(--text-muted);font-size:13px">
+            בחר/י משתתף או השאר/י ריק לדוח כולל
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -1088,7 +1126,7 @@ tbody td {
 
 <script>
 // ═══════════ CONFIG ═══════════
-const API_URL = 'https://script.google.com/macros/s/AKfycbwL54J4y9wRXPl9j0Jhx1_dMa1W3TnDLFNSsTciytQoh_TFNGpBrzJm8TgnmlrwGLBvoA/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbzEbMpwJSRx0-oDcDw6T5Q9n62cF7jsi6CJT_JWqmmfJu820GF5BGrGQaZlysTvXCv1Fg/exec';
 const DEMO_MODE = false;
 
 const SESSIONS_META = {
@@ -1582,6 +1620,312 @@ function showToast(msg, type) {
 }
 
 // Check local storage for existing admin session
+
+// ═══════════ PDF EXPORT ═══════════
+function populatePdfSelect() {
+  const sel = document.getElementById('pdfParticipantSelect');
+  sel.innerHTML = '<option value="">— כל המשתתפים —</option>';
+  state.participants.forEach(p => {
+    const opt = document.createElement('option');
+    opt.value = p.accessCode || p.participantId;
+    opt.textContent = p.fullName + (p.organization ? ' · ' + p.organization : '');
+    sel.appendChild(opt);
+  });
+}
+
+function generatePDF() {
+  const selCode = document.getElementById('pdfParticipantSelect').value;
+  const participants = selCode
+    ? state.participants.filter(p => (p.accessCode || p.participantId) === selCode)
+    : state.participants;
+
+  const SESSIONS_DATA = {
+    1: { title: 'תרבות ארגונית וניהול מבוסס ערכים',          question: 'איזה ערך ארגוני אני רוצה לחזק כעת, וכיצד הוא צריך לבוא לידי ביטוי בניהול היומיומי?' },
+    2: { title: 'חדשנות טכנולוגית ככלי ניהולי',              question: 'איזה תהליך ניהולי או ארגוני אצלי מתאים לשדרוג באמצעות כלי טכנולוגי או דיגיטלי?' },
+    3: { title: 'ניהול פרויקטים בשיטה שיתופית',              question: 'איזה מהלך או פרויקט אצלנו יכול להתקדם טוב יותר דרך שיתוף פעולה?' },
+    4: { title: 'ניהול משברים וקבלת החלטות תחת לחץ',         question: 'באיזה מצב ניהולי אני נדרש כיום לשפר קבלת החלטות בתנאי אי-ודאות או לחץ?' },
+    5: { title: 'יצירת שותפויות, מיתוג וחשיבה עסקית בחינוך', question: 'איזו שותפות או יוזמה יכולה לייצר ערך משמעותי לארגון שלי בשנה הקרובה?' }
+  };
+
+  const logoSrc = document.querySelector('.sidebar-brand img')?.src || '';
+
+  let html = `<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+<meta charset="UTF-8">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700&display=swap');
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Heebo', sans-serif; color: #1a1814; background: #fff; direction: rtl; }
+
+  /* ── PAGE — כל מפגש = דף נפרד ── */
+  .page {
+    page-break-after: always;
+    padding: 32px 44px 28px;
+    min-height: 100vh;
+    display: flex; flex-direction: column;
+  }
+  .page:last-child { page-break-after: avoid; }
+
+  /* ── HEADER ── */
+  .pdf-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding-bottom: 14px; border-bottom: 3px solid #b8913a; margin-bottom: 18px;
+  }
+  .pdf-header-logo { height: 44px; width: auto; }
+  .pdf-header-center { text-align: center; }
+  .pdf-header-center h1 { font-size: 18px; font-weight: 700; color: #1a1814; letter-spacing: -0.02em; }
+  .pdf-header-center p { font-size: 11px; color: #9a9690; margin-top: 2px; }
+  .pdf-header-date { font-size: 11px; color: #9a9690; text-align: left; min-width: 80px; }
+
+  /* ── PARTICIPANT STRIP ── */
+  .participant-strip {
+    background: #f7f5f1; border-right: 4px solid #b8913a;
+    border-radius: 8px; padding: 12px 18px; margin-bottom: 16px;
+    display: flex; gap: 28px; align-items: center; flex-wrap: wrap;
+  }
+  .ps-field { display: flex; flex-direction: column; }
+  .ps-label { font-size: 9px; font-weight: 700; color: #9a9690; letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 2px; }
+  .ps-value { font-size: 14px; font-weight: 600; color: #1a1814; }
+  .ps-value.light { font-weight: 500; font-size: 13px; }
+
+  /* ── SESSION TITLE BLOCK ── */
+  .session-title-block {
+    background: linear-gradient(135deg, #b8913a 0%, #c9a84c 100%);
+    color: #fff; border-radius: 10px; padding: 14px 20px; margin-bottom: 18px;
+    display: flex; align-items: center; gap: 14px;
+  }
+  .session-num-badge {
+    background: rgba(255,255,255,0.22); border-radius: 8px;
+    padding: 6px 14px; font-size: 22px; font-weight: 700; line-height: 1; white-space: nowrap;
+  }
+  .session-title-info { flex: 1; }
+  .session-title-text { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+  .session-title-question { font-size: 12px; opacity: 0.88; font-style: italic; line-height: 1.4; }
+  .session-status-badge {
+    background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.4);
+    border-radius: 20px; padding: 4px 14px; font-size: 11px; font-weight: 600; white-space: nowrap; align-self: flex-start;
+  }
+  .session-status-badge.done { background: rgba(45,122,94,0.35); border-color: rgba(45,200,120,0.4); }
+
+  /* ── CONTENT GRID ── */
+  .content-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; flex: 1; }
+
+  .section-box { background: #faf9f7; border: 1px solid #ede9e3; border-radius: 8px; padding: 14px 16px; }
+  .section-box.full { grid-column: 1 / -1; }
+  .section-title {
+    font-size: 9px; font-weight: 700; color: #b8913a; letter-spacing: 0.14em;
+    text-transform: uppercase; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #e8e4de;
+  }
+  .field-row { margin-bottom: 10px; }
+  .field-row:last-child { margin-bottom: 0; }
+  .field-label { font-size: 10px; color: #9a9690; margin-bottom: 3px; font-weight: 500; }
+  .field-value { font-size: 12px; color: #1a1814; line-height: 1.55; }
+  .field-value.empty { color: #c8c4c0; font-style: italic; font-size: 11px; }
+
+  /* ── SUMMARY ── */
+  .summary-box {
+    grid-column: 1 / -1;
+    background: rgba(184,145,58,0.07); border: 1px solid rgba(184,145,58,0.25);
+    border-radius: 8px; padding: 11px 16px;
+    display: flex; align-items: flex-start; gap: 8px;
+  }
+  .summary-quote { font-size: 24px; color: #b8913a; line-height: 1; flex-shrink: 0; }
+  .summary-text { font-size: 13px; color: #8a6a1a; font-weight: 500; line-height: 1.5; font-style: italic; }
+
+  /* ── ACTION ── */
+  .action-box {
+    background: rgba(45,122,94,0.07); border: 1px solid rgba(45,122,94,0.22);
+    border-radius: 8px; padding: 10px 14px; margin-top: 6px;
+  }
+  .action-label { font-size: 9px; font-weight: 700; color: #2d7a5e; letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 4px; }
+  .action-value { font-size: 13px; font-weight: 600; color: #1a5c44; line-height: 1.5; }
+
+  /* ── RELEVANCE ── */
+  .rel-row { display: flex; align-items: center; gap: 5px; margin-top: 4px; }
+  .rel-dot { width: 12px; height: 12px; border-radius: 50%; border: 1.5px solid #d0cac0; background: #f0ede8; }
+  .rel-dot.on { background: #b8913a; border-color: #b8913a; }
+  .rel-label { font-size: 10px; color: #9a9690; }
+
+  /* ── QUESTION ── */
+  .q-box { background: #f0ede8; border-radius: 8px; padding: 11px 14px; }
+  .q-text { font-size: 11px; color: #7a7570; font-style: italic; margin-bottom: 7px; line-height: 1.4; }
+  .a-text { font-size: 12px; color: #1a1814; line-height: 1.6; }
+  .a-text.empty { color: #c8c4c0; font-style: italic; font-size: 11px; }
+
+  /* ── EMPTY STATE ── */
+  .empty-page { flex: 1; display: flex; align-items: center; justify-content: center; color: #b0aca8; font-size: 14px; font-style: italic; }
+
+  /* ── FOOTER ── */
+  .pdf-footer {
+    margin-top: 16px; padding-top: 10px; border-top: 1px solid #e0dbd2;
+    display: flex; justify-content: space-between; align-items: center; font-size: 10px; color: #c0bcb8;
+  }
+  .pdf-footer-brand { font-weight: 600; color: #9a9690; }
+
+  @media print {
+    body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .page { padding: 24px 36px 20px; }
+  }
+</style>
+</head>
+<body>`;
+
+  const today = new Date().toLocaleDateString('he-IL', { year: 'numeric', month: 'long', day: 'numeric' });
+
+  const headerHtml = (logoSrc, today) => `
+    <div class="pdf-header">
+      <img class="pdf-header-logo" src="${logoSrc}" alt="לוגו">
+      <div class="pdf-header-center">
+        <h1>מנהל מאמץ מנהל</h1>
+        <p>יומן ניהולי אישי — דוח מסכם</p>
+      </div>
+      <div class="pdf-header-date">${today}</div>
+    </div>`;
+
+  const participantStripHtml = (p, s, total) => `
+    <div class="participant-strip">
+      <div class="ps-field">
+        <div class="ps-label">שם</div>
+        <div class="ps-value">${p.fullName || '—'}</div>
+      </div>
+      <div class="ps-field">
+        <div class="ps-label">תפקיד</div>
+        <div class="ps-value light">${p.role || '—'}</div>
+      </div>
+      <div class="ps-field">
+        <div class="ps-label">בית ספר / ארגון</div>
+        <div class="ps-value light">${p.organization || '—'}</div>
+      </div>
+      <div class="ps-field">
+        <div class="ps-label">שותף/ה</div>
+        <div class="ps-value light" style="font-size:12px">${p.partnerName || '—'}</div>
+      </div>
+      <div class="ps-field" style="margin-right:auto;text-align:left">
+        <div class="ps-label">מפגש</div>
+        <div class="ps-value" style="color:#b8913a">${s} / ${total}</div>
+      </div>
+    </div>`;
+
+  participants.forEach(p => {
+    const pResponses = state.responses.filter(r =>
+      r.participantId === p.participantId || r.accessCode === p.accessCode
+    );
+
+    // Each session = one page
+    for (let s = 1; s <= 5; s++) {
+      const r = pResponses.find(x => String(x.sessionNumber) === String(s));
+      const sess = SESSIONS_DATA[s];
+      const isSubmitted = r && (r.isSubmitted === 'TRUE' || r.isSubmitted === true);
+      const isDraft = r && !isSubmitted;
+      const statusLabel = isSubmitted ? 'הושלם ✓' : (isDraft ? 'טיוטה' : 'לא מולא');
+      const statusClass = isSubmitted ? 'done' : '';
+
+      const val = (v) => v
+        ? `<div class="field-value">${v}</div>`
+        : `<div class="field-value empty">—</div>`;
+
+      const relDots = (score) => {
+        let d = `<span class="rel-label">רלוונטיות:</span>`;
+        for (let i = 1; i <= 5; i++) d += `<div class="rel-dot ${i <= (score||0) ? 'on' : ''}"></div>`;
+        d += `<span class="rel-label" style="margin-right:2px">${score || 0}/5</span>`;
+        return `<div class="rel-row">${d}</div>`;
+      };
+
+      html += `<div class="page">
+        ${headerHtml(logoSrc, today)}
+        ${participantStripHtml(p, s, 5)}
+
+        <div class="session-title-block">
+          <div class="session-num-badge">${s}</div>
+          <div class="session-title-info">
+            <div class="session-title-text">${sess.title}</div>
+            <div class="session-title-question">${sess.question}</div>
+          </div>
+          <div class="session-status-badge ${statusClass}">${statusLabel}</div>
+        </div>`;
+
+      if (!r) {
+        html += `<div class="empty-page">לא הוזנו נתונים עבור מפגש זה</div>`;
+      } else {
+        html += `<div class="content-grid">`;
+
+        if (r.summarySentence) {
+          html += `<div class="summary-box">
+            <div class="summary-quote">"</div>
+            <div class="summary-text">${r.summarySentence}</div>
+          </div>`;
+        }
+
+        html += `
+          <div class="section-box">
+            <div class="section-title">א — מיקוד אישי</div>
+            <div class="field-row"><div class="field-label">תובנה מרכזית</div>${val(r.mainInsight)}</div>
+            <div class="field-row"><div class="field-label">רעיון שפגש אותי</div>${val(r.centralIdea)}</div>
+            <div class="field-row">${relDots(r.relevanceScore)}</div>
+          </div>
+
+          <div class="section-box">
+            <div class="section-title">ב — דיאלוג עם השותף/ה</div>
+            <div class="field-row"><div class="field-label">האם התקיים שיח</div>${val(r.dialogueStatus)}</div>
+            <div class="field-row"><div class="field-label">נושא השיחה</div>${val(r.dialogueTopic)}</div>
+            <div class="field-row"><div class="field-label">מה התחדד</div>${val(r.dialogueReflection)}</div>
+          </div>
+
+          <div class="section-box">
+            <div class="section-title">ג — השלכה ארגונית</div>
+            <div class="field-row"><div class="field-label">קשר לארגון</div>${val(r.organizationalConnection)}</div>
+            <div class="field-row"><div class="field-label">אתגר ניהולי</div>${val(r.managementChallenge)}</div>
+          </div>
+
+          <div class="section-box">
+            <div class="section-title">ד — פעולה</div>
+            <div class="action-box">
+              <div class="action-label">התחייבות לפעולה</div>
+              <div class="action-value">${r.actionCommitment || '—'}</div>
+            </div>
+            <div style="height:8px"></div>
+            <div class="field-row"><div class="field-label">מדד התקדמות</div>${val(r.progressDefinition)}</div>
+            <div class="field-row"><div class="field-label">משאבים נדרשים</div>${val(r.supportNeeded)}</div>
+          </div>
+
+          <div class="section-box full">
+            <div class="section-title">ה — שאלת המפגש</div>
+            <div class="q-box">
+              <div class="q-text">${sess.question}</div>
+              ${r.customSessionQuestionAnswer
+                ? `<div class="a-text">${r.customSessionQuestionAnswer}</div>`
+                : `<div class="a-text empty">לא נענה</div>`}
+            </div>
+          </div>
+
+        </div>`;
+      }
+
+      html += `
+        <div class="pdf-footer">
+          <div class="pdf-footer-brand">מנהל מאמץ מנהל</div>
+          <div>${p.fullName || ''} · ${p.organization || ''}</div>
+          <div>הופק: ${today}</div>
+        </div>
+      </div>`;
+    }
+  });
+
+  html += `</body></html>`;
+
+  const win = window.open('', '_blank');
+  win.document.write(html);
+  win.document.close();
+  setTimeout(() => win.print(), 800);
+}
+
+// Populate PDF select when data loads
+const _origRenderStats = renderStats;
+renderStats = function() {
+  _origRenderStats();
+  populatePdfSelect();
+};
 
 </script>
 </body>
