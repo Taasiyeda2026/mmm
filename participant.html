@@ -112,6 +112,138 @@ textarea.field-input:focus, input.field-input:focus {
   box-shadow: 0 1px 2px rgba(0,0,0,0.06);
 }
 
+/* ── RIPPLE EFFECT ── */
+.ripple-host { position: relative; overflow: hidden; }
+.ripple {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(184,145,58,0.22);
+  transform: scale(0);
+  animation: rippleAnim 0.55s linear;
+  pointer-events: none;
+}
+@keyframes rippleAnim {
+  to { transform: scale(4); opacity: 0; }
+}
+
+/* ── ENTRANCE ANIMATIONS ── */
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateX(10px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.96); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+.fade-in { animation: fadeSlideUp 0.4s cubic-bezier(0.22,1,0.36,1) both; }
+.fade-in-delay-1 { animation: fadeSlideUp 0.4s 0.07s cubic-bezier(0.22,1,0.36,1) both; }
+.fade-in-delay-2 { animation: fadeSlideUp 0.4s 0.14s cubic-bezier(0.22,1,0.36,1) both; }
+.fade-in-delay-3 { animation: fadeSlideUp 0.4s 0.21s cubic-bezier(0.22,1,0.36,1) both; }
+
+/* ── SESSION CARD HOVER DEPTH ── */
+.session-card {
+  transition: box-shadow 0.2s ease, transform 0.2s ease !important;
+  cursor: pointer;
+}
+.session-card:hover {
+  transform: translateY(-2px) !important;
+}
+.session-card:active {
+  transform: translateY(0px) scale(0.99) !important;
+}
+
+/* ── FIELD FOCUS LIFT ── */
+textarea.field-input, input.field-input {
+  transition: box-shadow 0.2s ease, border-color 0.2s ease, transform 0.15s ease !important;
+}
+textarea.field-input:focus, input.field-input:focus {
+  transform: translateY(-1px);
+}
+
+/* ── SCALE BTN SELECTION ANIMATION ── */
+.scale-btn {
+  transition: all 0.15s cubic-bezier(0.34,1.56,0.64,1) !important;
+}
+.scale-btn.selected {
+  animation: scalePop 0.2s cubic-bezier(0.34,1.56,0.64,1);
+}
+@keyframes scalePop {
+  0%   { transform: scale(0.9); }
+  60%  { transform: scale(1.08); }
+  100% { transform: scale(1); }
+}
+
+/* ── RADIO LABEL SELECTION ── */
+.radio-label {
+  transition: all 0.18s cubic-bezier(0.34,1.56,0.64,1) !important;
+}
+.radio-option input:checked + .radio-label {
+  transform: scale(1.04);
+}
+
+/* ── NAME BTN HOVER LINE ── */
+.name-btn {
+  position: relative;
+  overflow: hidden;
+}
+.name-btn::after {
+  content: '';
+  position: absolute;
+  bottom: 0; right: 0;
+  width: 0; height: 2px;
+  background: var(--gold);
+  transition: width 0.25s ease;
+}
+.name-btn:hover::after { width: 100%; }
+
+/* ── SCHOOL BTN OPEN INDICATOR ── */
+.school-btn {
+  transition: all 0.2s cubic-bezier(0.4,0,0.2,1) !important;
+}
+.school-btn.open {
+  border-color: var(--gold) !important;
+}
+
+/* ── SAVE STATUS PULSE ── */
+@keyframes savePulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.6; }
+}
+.save-status.saving { animation: savePulse 1s ease infinite; }
+
+/* ── TOAST ENTRANCE ── */
+.toast { transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.34,1.56,0.64,1) !important; }
+.toast.show { transform: translateX(-50%) translateY(0) scale(1) !important; }
+
+/* ── PROGRESS BAR ANIMATION ── */
+.progress-fill {
+  transition: width 0.8s cubic-bezier(0.22,1,0.36,1) !important;
+}
+
+/* ── CODE PANEL ENTRANCE ── */
+#codePanel {
+  animation: scaleIn 0.25s cubic-bezier(0.22,1,0.36,1);
+}
+
+/* ── SUBMIT BUTTON SHINE ── */
+.btn-submit {
+  background-size: 200% auto !important;
+  transition: background-position 0.4s ease, box-shadow 0.2s ease, transform 0.15s ease !important;
+}
+.btn-submit:hover {
+  background: linear-gradient(90deg, var(--gold) 0%, var(--gold-light) 50%, var(--gold) 100%) !important;
+  background-size: 200% auto !important;
+  animation: shimmer 1.5s linear infinite !important;
+}
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -1455,6 +1587,7 @@ function renderDashboard() {
   grid.innerHTML = SESSIONS.map(s => {
     const data = state.sessions[s.number];
     const isCompleted = data && (data.isSubmitted === 'TRUE' || data.isSubmitted === true);
+    const delayClass = ['', 'fade-in-delay-1', 'fade-in-delay-2', 'fade-in-delay-3', 'fade-in-delay-3'][idx] || '';
     const isDraft = data && !isCompleted;
 
     let cardClass = '';
@@ -1723,13 +1856,13 @@ async function saveSession(isSubmitted = false) {
     setSaveStatus('saved', 'נשמר ✓');
     if (isSubmitted) {
       showToast('המפגש הושלם ונשמר בהצלחה', 'success');
-      setTimeout(() => goToDashboard(), 1200);
+      setTimeout(() => goToDashboard(), 1500);
     } else {
       showToast('הטיוטה נשמרה', 'success');
-      setTimeout(() => setSaveStatus('', 'נשמר'), 3000);
+      setTimeout(() => setSaveStatus('', ''), 3000);
     }
   } else {
-    setSaveStatus('', 'שגיאה בשמירה');
+    setSaveStatus('error', 'שגיאה בשמירה');
     showToast('שגיאה בשמירה — נסה/י שנית', 'error');
   }
 }
@@ -1763,6 +1896,38 @@ function showScreen(id) {
 function goToDashboard() {
   showDashboard();
 }
+
+// ── RIPPLE EFFECT ──
+function addRipple(e) {
+  const btn = e.currentTarget;
+  if (!btn.classList.contains('ripple-host')) btn.classList.add('ripple-host');
+  const rect = btn.getBoundingClientRect();
+  const size = Math.max(rect.width, rect.height);
+  const x = e.clientX - rect.left - size / 2;
+  const y = e.clientY - rect.top - size / 2;
+  const ripple = document.createElement('span');
+  ripple.className = 'ripple';
+  ripple.style.cssText = `width:${size}px;height:${size}px;left:${x}px;top:${y}px`;
+  btn.appendChild(ripple);
+  ripple.addEventListener('animationend', () => ripple.remove());
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  // Add ripple to all buttons
+  document.querySelectorAll('button').forEach(btn => {
+    btn.addEventListener('click', addRipple);
+  });
+
+  // Observer for dynamically added buttons
+  new MutationObserver(mutations => {
+    mutations.forEach(m => m.addedNodes.forEach(node => {
+      if (node.nodeType === 1) {
+        if (node.tagName === 'BUTTON') node.addEventListener('click', addRipple);
+        node.querySelectorAll?.('button').forEach(btn => btn.addEventListener('click', addRipple));
+      }
+    }));
+  }).observe(document.body, { childList: true, subtree: true });
+});
 
 function doLogout() {
   state.participant = null;
