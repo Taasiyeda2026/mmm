@@ -1203,7 +1203,7 @@ input.field-input::placeholder {
 </head>
 <body>
 
-<!-- ═══════════════════════════════ LOGIN ═══════════════════════════════ -->
+<!-- ═══════════════════════════════ PERSONAL LINK LOADER ═══════════════════════════════ -->
 <div id="loginScreen" class="screen active">
   <div class="login-box fade-in">
     <div class="logo-mark">
@@ -1213,22 +1213,10 @@ input.field-input::placeholder {
     <div class="login-subtitle">יומן ניהולי אישי</div>
 
     <div class="login-card">
-      <label class="field-label">כניסה למרחב האישי</label>
-      <div id="namesList" class="names-list">
-        <div class="names-loading">
-          <span class="loader"></span>
-          <span style="margin-right:10px;font-size:13px;color:var(--text-muted)">טוען משתתפים...</span>
-        </div>
-      </div>
-      <div id="codePanel" style="display:none">
-        <div class="code-panel">
-          <div class="code-panel-name" id="codePanelName"></div>
-          <input class="code-panel-input" type="password" id="codePanelInput"
-            placeholder="הכנס/י קוד אישי"
-            maxlength="20"
-            onkeydown="if(event.key==='Enter') doCodeLogin()">
-          <button class="code-panel-btn" id="codePanelBtn" onclick="doCodeLogin()">כניסה ←</button>
-        </div>
+      <label class="field-label">כניסה אישית</label>
+      <div id="linkLoader" class="names-loading">
+        <span class="loader"></span>
+        <span style="margin-right:10px;font-size:13px;color:var(--text-muted)">מאמת קישור אישי...</span>
       </div>
       <div class="error-msg" id="loginError"></div>
     </div>
@@ -1246,7 +1234,7 @@ input.field-input::placeholder {
     </div>
     <div class="top-bar-user">
       <span class="user-name" id="topBarName"></span>
-      <button class="btn-logout" onclick="doLogout()">יציאה</button>
+      <button class="btn-logout" onclick="resetPersonalLink()">איפוס קישור</button>
     </div>
   </div>
 
@@ -1311,7 +1299,8 @@ let state = {
   participant: null,
   sessions: {},
   currentSession: null,
-  adminToken: null
+  adminToken: null,
+  participantToken: null
 };
 
 // ═══════════════════════════ SESSION DEFINITIONS ═══════════════════════════
@@ -1368,15 +1357,11 @@ function demoApiCall(action, body) {
   if (!db.responses) db.responses = {};
 
   switch (action) {
-    case 'getParticipantNames':
-      return {
-        success: true,
-        names: db.participants.map(p => ({
-          accessCode: p.accessCode,
-          fullName: p.fullName,
-          organization: p.organization
-        }))
-      };
+    case 'getParticipantByLink': {
+      const p = db.participants.find(p => p.participantToken === body.participantToken);
+      if (p) return { success: true, participant: p };
+      return { success: false, error: 'קישור אישי לא נמצא' };
+    }
     case 'login':
     case 'getParticipant': {
       const p = db.participants.find(p => p.accessCode === body.accessCode.toUpperCase());
@@ -1415,141 +1400,48 @@ function demoApiCall(action, body) {
 
 function getDemoParticipants() {
   return [
-    { participantId: 'P001', accessCode: '6UFMXN', fullName: 'גילת סיימון', role: 'מנהלת אגף החינוך העל-יסודי', organization: 'עיריית נתניה', partnerName: 'אורית טסלר לוי', partnerRole: 'סמנכ"לית' },
-    { participantId: 'P002', accessCode: 'PDB4TA', fullName: 'אושרית ונדן', role: 'צוות ניהול', organization: 'אולפנית בר אילן', partnerName: 'ד"ר אורנית כהן', partnerRole: 'ראש רשות המחקר והחדשנות' },
-    { participantId: 'P003', accessCode: '6PHKFP', fullName: 'יהודית', role: 'צוות ניהול', organization: 'אולפנית בר אילן', partnerName: 'ד"ר אורנית כהן', partnerRole: 'ראש רשות המחקר והחדשנות' },
-    { participantId: 'P004', accessCode: 'AGVX9P', fullName: 'בת-חן שטדלר', role: 'צוות ניהול', organization: 'אולפנית בר אילן', partnerName: 'ד"ר אורנית כהן', partnerRole: 'ראש רשות המחקר והחדשנות' },
-    { participantId: 'P005', accessCode: 'R9EXQJ', fullName: 'סמדר דביר', role: 'צוות ניהול', organization: 'טשרניחובסקי', partnerName: 'עידן ופנר', partnerRole: 'סמנכ"ל טכנולוגיות' },
-    { participantId: 'P006', accessCode: 'QKRQYH', fullName: 'אושר תבורי', role: 'צוות ניהול', organization: 'טשרניחובסקי', partnerName: 'עידן ופנר', partnerRole: 'סמנכ"ל טכנולוגיות' },
-    { participantId: 'P007', accessCode: 'XJBMJE', fullName: 'ענבל שרף', role: 'מנהלת בית הספר', organization: 'אלתרמן', partnerName: 'נתן ברק', partnerRole: 'מנכ"ל' },
-    { participantId: 'P008', accessCode: 'DVB68L', fullName: 'שוש קיפר', role: 'צוות ניהול', organization: 'חיים גורי', partnerName: 'לריסה אמיר', partnerRole: 'מנכ"לית' },
-    { participantId: 'P009', accessCode: 'Q4J78V', fullName: 'עינב כהן', role: 'צוות ניהול', organization: 'חיים גורי', partnerName: 'לריסה אמיר', partnerRole: 'מנכ"לית' },
-    { participantId: 'P010', accessCode: 'L35LYZ', fullName: 'גלית פישר', role: 'צוות ניהול', organization: 'חיים גורי', partnerName: 'לריסה אמיר', partnerRole: 'מנכ"לית' },
-    { participantId: 'P011', accessCode: 'B4P5P6', fullName: 'סיגלית כהן', role: 'צוות ניהול', organization: 'שי עגנון', partnerName: 'רון שניר', partnerRole: 'מנכ"ל' },
-    { participantId: 'P012', accessCode: 'NQ8477', fullName: 'נירית כהן', role: 'מנהלת בית הספר', organization: 'שחפים', partnerName: 'רגין שבח', partnerRole: 'מנכ"לית' },
-    { participantId: 'P013', accessCode: '8CDKBF', fullName: 'ברכה דעבול', role: 'מנהלת בית הספר', organization: 'מורשת זבולון', partnerName: 'אנסטסיה זהר מדר', partnerRole: 'מנהלת רווחה וחוויית עובדים' },
+    { participantId: 'P001', accessCode: '6UFMXN', participantToken: 'demo-token-001', fullName: 'גילת סיימון', role: 'מנהלת אגף החינוך העל-יסודי', organization: 'עיריית נתניה', partnerName: 'אורית טסלר לוי', partnerRole: 'סמנכ"לית' },
+    { participantId: 'P002', accessCode: 'PDB4TA', participantToken: 'demo-token-002', fullName: 'אושרית ונדן', role: 'צוות ניהול', organization: 'אולפנית בר אילן', partnerName: 'ד"ר אורנית כהן', partnerRole: 'ראש רשות המחקר והחדשנות' },
+    { participantId: 'P003', accessCode: '6PHKFP', participantToken: 'demo-token-003', fullName: 'יהודית', role: 'צוות ניהול', organization: 'אולפנית בר אילן', partnerName: 'ד"ר אורנית כהן', partnerRole: 'ראש רשות המחקר והחדשנות' },
+    { participantId: 'P004', accessCode: 'AGVX9P', participantToken: 'demo-token-004', fullName: 'בת-חן שטדלר', role: 'צוות ניהול', organization: 'אולפנית בר אילן', partnerName: 'ד"ר אורנית כהן', partnerRole: 'ראש רשות המחקר והחדשנות' },
+    { participantId: 'P005', accessCode: 'R9EXQJ', participantToken: 'demo-token-005', fullName: 'סמדר דביר', role: 'צוות ניהול', organization: 'טשרניחובסקי', partnerName: 'עידן ופנר', partnerRole: 'סמנכ"ל טכנולוגיות' },
+    { participantId: 'P006', accessCode: 'QKRQYH', participantToken: 'demo-token-006', fullName: 'אושר תבורי', role: 'צוות ניהול', organization: 'טשרניחובסקי', partnerName: 'עידן ופנר', partnerRole: 'סמנכ"ל טכנולוגיות' },
+    { participantId: 'P007', accessCode: 'XJBMJE', participantToken: 'demo-token-007', fullName: 'ענבל שרף', role: 'מנהלת בית הספר', organization: 'אלתרמן', partnerName: 'נתן ברק', partnerRole: 'מנכ"ל' },
+    { participantId: 'P008', accessCode: 'DVB68L', participantToken: 'demo-token-008', fullName: 'שוש קיפר', role: 'צוות ניהול', organization: 'חיים גורי', partnerName: 'לריסה אמיר', partnerRole: 'מנכ"לית' },
+    { participantId: 'P009', accessCode: 'Q4J78V', participantToken: 'demo-token-009', fullName: 'עינב כהן', role: 'צוות ניהול', organization: 'חיים גורי', partnerName: 'לריסה אמיר', partnerRole: 'מנכ"לית' },
+    { participantId: 'P010', accessCode: 'L35LYZ', participantToken: 'demo-token-010', fullName: 'גלית פישר', role: 'צוות ניהול', organization: 'חיים גורי', partnerName: 'לריסה אמיר', partnerRole: 'מנכ"לית' },
+    { participantId: 'P011', accessCode: 'B4P5P6', participantToken: 'demo-token-011', fullName: 'סיגלית כהן', role: 'צוות ניהול', organization: 'שי עגנון', partnerName: 'רון שניר', partnerRole: 'מנכ"ל' },
+    { participantId: 'P012', accessCode: 'NQ8477', participantToken: 'demo-token-012', fullName: 'נירית כהן', role: 'מנהלת בית הספר', organization: 'שחפים', partnerName: 'רגין שבח', partnerRole: 'מנכ"לית' },
+    { participantId: 'P013', accessCode: '8CDKBF', participantToken: 'demo-token-013', fullName: 'ברכה דעבול', role: 'מנהלת בית הספר', organization: 'מורשת זבולון', partnerName: 'אנסטסיה זהר מדר', partnerRole: 'מנהלת רווחה וחוויית עובדים' },
   ];
 }
 
-// ═══════════════════════════ LOGIN ═══════════════════════════
-async function loadNamesList() {
-  const result = await apiCall('getParticipantNames', {});
-  const container = document.getElementById('namesList');
+// ═══════════════════════════ PERSONAL LINK AUTH ═══════════════════════════
+function getParticipantTokenFromUrl() {
+  const params = new URLSearchParams(window.location.search);
+  return params.get('p') || params.get('participantToken') || '';
+}
 
-  if (!result.success || !result.names || result.names.length === 0) {
-    container.innerHTML = '<div style="padding:16px;color:var(--text-muted);font-size:13px">לא נמצאו משתתפים</div>';
+async function initFromPersonalLink() {
+  const participantToken = getParticipantTokenFromUrl();
+  if (!participantToken) {
+    showError('קישור אישי חסר או לא תקין');
+    document.getElementById('linkLoader').style.display = 'none';
     return;
   }
 
-  // Group by organization
-  const groups = {};
-  result.names.forEach(p => {
-    const org = p.organization || 'אחר';
-    if (!groups[org]) groups[org] = [];
-    groups[org].push(p);
-  });
-
-  const sortedOrgs = Object.keys(groups).sort((a, b) => {
-    if (a === 'עיריית נתניה') return -1;
-    if (b === 'עיריית נתניה') return 1;
-    return a.localeCompare(b, 'he');
-  });
-
-  container.innerHTML = sortedOrgs.map((org, idx) => {
-    const members = groups[org];
-    const groupId = 'group_' + idx;
-
-    const memberBtns = members.map(p => `
-      <button class="name-btn" onclick="showCodePanel('${p.accessCode}', '${p.fullName}', this)">
-        <span class="name-btn-text">${p.fullName}</span>
-        <svg class="name-btn-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M5 12h14M12 5l7 7-7 7"/>
-        </svg>
-      </button>
-    `).join('');
-
-    return `
-      <button class="school-btn" onclick="toggleSchool('${groupId}', this)">
-        <span class="school-btn-text">${org}</span>
-        <span class="school-btn-count">${members.length}</span>
-        <svg class="school-btn-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M5 12h14M12 5l7 7-7 7"/>
-        </svg>
-      </button>
-      <div class="participants-list" id="${groupId}">
-        ${memberBtns}
-      </div>
-    `;
-  }).join('');
-}
-
-function toggleSchool(groupId, btn) {
-  const list = document.getElementById(groupId);
-  const isOpen = list.classList.contains('open');
-  // Close all
-  document.querySelectorAll('.participants-list').forEach(l => l.classList.remove('open'));
-  document.querySelectorAll('.school-btn').forEach(b => b.classList.remove('open'));
-  // Open clicked (if was closed)
-  if (!isOpen) {
-    list.classList.add('open');
-    btn.classList.add('open');
+  state.participantToken = participantToken;
+  const result = await apiCall('getParticipantByLink', { participantToken });
+  if (!result.success || !result.participant) {
+    showError('הקישור האישי לא תקין או שפג תוקף');
+    document.getElementById('linkLoader').style.display = 'none';
+    return;
   }
-}
 
-let _pendingAccessCode = null;
-let _pendingBtn = null;
-
-function showCodePanel(accessCode, fullName, btn) {
-  // Deactivate all name buttons
-  document.querySelectorAll('.name-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-
-  _pendingAccessCode = accessCode;
-  _pendingBtn = btn;
-
-  document.getElementById('codePanelName').textContent = 'כניסה עבור: ' + fullName;
-  document.getElementById('codePanelInput').value = '';
-  document.getElementById('codePanel').style.display = 'block';
+  state.participant = result.participant;
   hideError();
-
-  // Scroll to panel and focus
-  setTimeout(() => {
-    document.getElementById('codePanel').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    document.getElementById('codePanelInput').focus();
-  }, 100);
-}
-
-async function doCodeLogin() {
-  const enteredCode = document.getElementById('codePanelInput').value.trim();
-  if (!enteredCode) { showError('יש להזין קוד אישי'); return; }
-  if (!_pendingAccessCode) return;
-
-  const btn = document.getElementById('codePanelBtn');
-  btn.disabled = true;
-  btn.textContent = 'מתחבר...';
-
-  // The accessCode IS the personal code — verify they match
-  if (enteredCode.toLowerCase() !== _pendingAccessCode.toString().toLowerCase()) {
-    showError('קוד שגוי — נסה/י שנית');
-    btn.disabled = false;
-    btn.textContent = 'כניסה ←';
-    document.getElementById('codePanelInput').value = '';
-    document.getElementById('codePanelInput').focus();
-    return;
-  }
-
-  const result = await apiCall('login', { accessCode: _pendingAccessCode });
-
-  if (result.success) {
-    state.participant = result.participant;
-    hideError();
-    document.getElementById('codePanel').style.display = 'none';
-    await showDashboard();
-  } else {
-    showError('שגיאה בטעינת הנתונים — נסה/י שנית');
-    btn.disabled = false;
-    btn.textContent = 'כניסה ←';
-  }
+  document.getElementById('linkLoader').style.display = 'none';
+  await showDashboard();
 }
 
 function showError(msg) {
@@ -1929,11 +1821,11 @@ document.addEventListener('DOMContentLoaded', () => {
   }).observe(document.body, { childList: true, subtree: true });
 });
 
-function doLogout() {
+function resetPersonalLink() {
   state.participant = null;
   state.sessions = {};
-  loadNamesList();
-  showScreen('loginScreen');
+  const baseUrl = window.location.origin + window.location.pathname;
+  window.location.href = baseUrl;
 }
 
 function showToast(msg, type = '') {
@@ -1948,8 +1840,8 @@ function debounce(fn, ms) {
   return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
 }
 
-// Init — load names on page load
-loadNamesList();
+// Init — authenticate by personal link on page load
+initFromPersonalLink();
 </script>
 </body>
 </html>
