@@ -1034,7 +1034,7 @@ tbody td {
             <thead>
               <tr>
                 <th>שם</th><th>תפקיד</th><th>ארגון</th><th>שותף/ה</th>
-                <th>קוד גישה</th><th>מפגשים</th><th>פעולה</th>
+                <th>קישור אישי</th><th>מפגשים</th><th>פעולה</th>
               </tr>
             </thead>
             <tbody id="participantsTable"></tbody>
@@ -1136,12 +1136,12 @@ tbody td {
               </div>
               <div></div>
             </div>
-            <button class="btn-gold" style="max-width:180px;padding:9px" onclick="addParticipant()">צור משתתף + קוד</button>
+            <button class="btn-gold" style="max-width:180px;padding:9px" onclick="addParticipant()">צור משתתף</button>
           </div>
           <div class="new-code-result" id="newCodeResult">
-            <div style="font-size:13px;color:var(--text-dim);margin-bottom:8px">המשתתף נוצר בהצלחה. קוד גישה:</div>
-            <div class="access-code-display" id="newCodeDisplay"></div>
-            <div style="font-size:12px;color:var(--text-muted)">קישור ישיר: <span id="newCodeLink" style="color:var(--accent)"></span></div>
+            <div style="font-size:13px;color:var(--text-dim);margin-bottom:8px">המשתתף נוצר בהצלחה. קישור אישי:</div>
+            <div id="newCodeDisplay" style="font-size:12px;color:var(--accent);word-break:break-all;margin-bottom:8px"></div>
+            <button class="btn-sm" onclick="copyParticipantLink()">העתק קישור</button>
           </div>
         </div>
       </div>
@@ -1536,7 +1536,7 @@ function renderParticipants() {
         <td>${p.role || '—'}</td>
         <td>${p.organization || '—'}</td>
         <td class="td-org">${p.partnerName || '—'}</td>
-        <td><span style="font-family:monospace;color:var(--gold);font-size:13px;letter-spacing:0.1em">${p.accessCode}</span></td>
+        <td>${p.participantToken ? `<button class="btn-sm" onclick="copyParticipantLinkByToken('${p.participantToken}')">העתק קישור</button>` : '<span style="color:var(--text-muted);font-size:12px">—</span>'}</td>
         <td><div class="session-dots">${dots}</div></td>
         <td><button class="btn-sm" onclick="viewParticipantResponses('${p.accessCode}')">צפייה</button></td>
       </tr>
@@ -1847,18 +1847,29 @@ async function addParticipant() {
   });
 
   if (result.success) {
-    const code = result.accessCode;
     const participantToken = result.participantToken || '';
     const link = participantToken
       ? `${window.location.origin}/participant.html?p=${encodeURIComponent(participantToken)}`
       : `${window.location.origin}/participant.html`;
-    document.getElementById('newCodeDisplay').textContent = code;
-    document.getElementById('newCodeLink').textContent = link;
+    document.getElementById('newCodeDisplay').textContent = link;
     document.getElementById('newCodeResult').style.display = 'block';
     showToast('משתתף נוצר בהצלחה', 'success');
     loadAllData();
     showPage('participants');
   }
+}
+
+// ═══════════ PERSONAL LINK COPY ═══════════
+function copyParticipantLink() {
+  const link = document.getElementById('newCodeDisplay').textContent;
+  if (!link) return;
+  navigator.clipboard.writeText(link).then(() => showToast('הקישור הועתק', 'success'));
+}
+
+function copyParticipantLinkByToken(token) {
+  if (!token) { showToast('קישור אישי לא זמין', ''); return; }
+  const link = `${window.location.origin}/participant.html?p=${encodeURIComponent(token)}`;
+  navigator.clipboard.writeText(link).then(() => showToast('הקישור הועתק', 'success'));
 }
 
 // ═══════════ EXPORT ═══════════
