@@ -37,6 +37,10 @@ function doPost(e) {
       case 'adminGetResponses': result = handleAdminGetResponses(body); break;
       case 'adminAddParticipant': result = handleAdminAddParticipant(body); break;
       case 'adminExport':     result = handleAdminExport(body); break;
+      case 'adminGetManagementMeetings': result = handleAdminGetManagementMeetings(body); break;
+      case 'adminUpsertManagementMeeting': result = handleAdminUpsertManagementMeeting(body); break;
+      case 'adminDeleteManagementMeeting': result = handleAdminDeleteManagementMeeting(body); break;
+      case 'getParticipantByLink': result = handleGetParticipantByLink(body); break;
       case 'getParticipantNames': result = handleGetParticipantNames(); break;
       default: result = { success: false, error: 'Unknown action' };
     }
@@ -69,9 +73,11 @@ function handleLogin(body) {
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const sheet = ss.getSheetByName('Participants');
   const data = sheet.getDataRange().getValues();
+  const tokenCol = ensureParticipantTokenColumn(sheet, data);
   
   for (let i = 1; i < data.length; i++) {
     if (data[i][1].toString().toLowerCase() === accessCode.toString().toLowerCase()) {
+      const participantToken = ensureParticipantTokenForRow(sheet, data, i, tokenCol);
       return {
         success: true,
         participant: {
@@ -82,12 +88,45 @@ function handleLogin(body) {
           organization: data[i][4],
           partnerName: data[i][5],
           partnerRole: data[i][6],
-          partnerOrganization: data[i][7] || ''
+          partnerOrganization: data[i][7] || '',
+          participantToken
         }
       };
     }
   }
   return { success: false, error: 'קוד גישה שגוי' };
+}
+
+function handleGetParticipantByLink(body) {
+  const { participantToken } = body;
+  if (!participantToken) return { success: false, error: 'קישור אישי חסר או לא תקין' };
+
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const sheet = ss.getSheetByName('Participants');
+  const data = sheet.getDataRange().getValues();
+  const tokenCol = ensureParticipantTokenColumn(sheet, data);
+
+  for (let i = 1; i < data.length; i++) {
+    const rowToken = ensureParticipantTokenForRow(sheet, data, i, tokenCol);
+    if (String(rowToken) === String(participantToken)) {
+      return {
+        success: true,
+        participant: {
+          participantId: data[i][0],
+          accessCode: data[i][1],
+          fullName: data[i][2],
+          role: data[i][3],
+          organization: data[i][4],
+          partnerName: data[i][5],
+          partnerRole: data[i][6],
+          partnerOrganization: data[i][7] || '',
+          participantToken: rowToken
+        }
+      };
+    }
+  }
+
+  return { success: false, error: 'קישור אישי לא נמצא' };
 }
 
 function handleGetParticipant(body) {
@@ -329,12 +368,19 @@ function handleAdminAddParticipant(body) {
 
   const participantId = 'P' + new Date().getTime();
   const accessCode = generateCode();
+  const participantToken = generateParticipantToken();
 
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const sheet = ss.getSheetByName('Participants');
-  sheet.appendRow([participantId, accessCode, fullName, role || '', organization || '', partnerName || '', partnerRole || '', partnerOrganization || '', new Date().toISOString()]);
+  const data = sheet.getDataRange().getValues();
+  const tokenCol = ensureParticipantTokenColumn(sheet, data);
 
-  return { success: true, participantId, accessCode };
+  const baseRow = [participantId, accessCode, fullName, role || '', organization || '', partnerName || '', partnerRole || '', partnerOrganization || '', new Date().toISOString()];
+  while (baseRow.length <= tokenCol) baseRow.push('');
+  baseRow[tokenCol] = participantToken;
+  sheet.appendRow(baseRow);
+
+  return { success: true, participantId, accessCode, participantToken };
 }
 
 function handleAdminExport(body) {
@@ -364,6 +410,59 @@ function handleAdminExport(body) {
   };
 }
 
+function handleAdminGetManagementMeetings(body) {
+  if (!validateAdmin(body)) return { success: false, error: 'Unauthorized' };
+
+  const sheet = getOrCreateManagementMeetingsSheet();
+  const meetings = sheetToObjects(sheet)
+    .filter(m => m.teamName && m.meetingDate)
+    .sort((a, b) => String(a.meetingDate).localeCompare(String(b.meetingDate), 'he'));
+
+  return { success: true, meetings };
+}
+
+function handleAdminUpsertManagementMeeting(body) {
+  if (!validateAdmin(body)) return { success: false, error: 'Unauthorized' };
+
+  const { id, teamName, meetingDate } = body;
+  if (!teamName || !meetingDate) return { success: false, error: 'שם צוות ותאריך נדרשים' };
+
+  const sheet = getOrCreateManagementMeetingsSheet();
+  const data = sheet.getDataRange().getValues();
+  const now = new Date().toISOString();
+
+  if (id) {
+    for (let i = 1; i < data.length; i++) {
+      if (String(data[i][0]) === String(id)) {
+        sheet.getRange(i + 1, 2, 1, 3).setValues([[teamName, meetingDate, now]]);
+        return { success: true, id, updatedAt: now };
+      }
+    }
+  }
+
+  const newId = 'MM' + new Date().getTime();
+  sheet.appendRow([newId, teamName, meetingDate, now, now]);
+  return { success: true, id: newId, createdAt: now };
+}
+
+function handleAdminDeleteManagementMeeting(body) {
+  if (!validateAdmin(body)) return { success: false, error: 'Unauthorized' };
+
+  const { id } = body;
+  if (!id) return { success: false, error: 'Missing id' };
+
+  const sheet = getOrCreateManagementMeetingsSheet();
+  const data = sheet.getDataRange().getValues();
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][0]) === String(id)) {
+      sheet.deleteRow(i + 1);
+      return { success: true };
+    }
+  }
+
+  return { success: false, error: 'Meeting not found' };
+}
+
 // ============================================================
 // HELPERS
 // ============================================================
@@ -379,6 +478,30 @@ function generateCode() {
     code += chars[Math.floor(Math.random() * chars.length)];
   }
   return code;
+}
+
+function generateParticipantToken() {
+  return (Utilities.getUuid().replace(/-/g, '') + Utilities.getUuid().replace(/-/g, '')).toLowerCase();
+}
+
+function ensureParticipantTokenColumn(sheet, data) {
+  const headers = data[0] || [];
+  const tokenHeaderIndex = headers.indexOf('participantToken');
+  if (tokenHeaderIndex >= 0) return tokenHeaderIndex;
+
+  const newCol = headers.length + 1;
+  sheet.getRange(1, newCol).setValue('participantToken');
+  return newCol - 1;
+}
+
+function ensureParticipantTokenForRow(sheet, data, rowIndex, tokenCol) {
+  const currentToken = data[rowIndex][tokenCol];
+  if (currentToken) return currentToken;
+
+  const newToken = generateParticipantToken();
+  sheet.getRange(rowIndex + 1, tokenCol + 1).setValue(newToken);
+  data[rowIndex][tokenCol] = newToken;
+  return newToken;
 }
 
 function sheetToObjects(sheet) {
@@ -430,4 +553,16 @@ function buildResponseRow(participant, sessionNumber, d, now) {
     d.isSubmitted ? 'TRUE' : 'FALSE',
     participant.participantId
   ];
+}
+
+function getOrCreateManagementMeetingsSheet() {
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  let sheet = ss.getSheetByName('ManagementMeetings');
+  if (!sheet) {
+    sheet = ss.insertSheet('ManagementMeetings');
+    sheet.getRange(1, 1, 1, 5).setValues([[
+      'id', 'teamName', 'meetingDate', 'createdAt', 'updatedAt'
+    ]]);
+  }
+  return sheet;
 }
